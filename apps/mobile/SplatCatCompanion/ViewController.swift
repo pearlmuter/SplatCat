@@ -6,12 +6,13 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
     var sceneView: ARSCNView!
     var streamer: StreamerService?
     private var lastKeyframeTime: TimeInterval = 0
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false]) // Reuse context across frames
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         sceneView = ARSCNView(frame: view.bounds)
-        sceneView.autoresizingMask = [.flexibleWidth, [.flexibleHeight]]
+        sceneView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(sceneView)
         
         sceneView.delegate = self
@@ -43,7 +44,6 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         guard let streamer = streamer, streamer.isStreaming else { return }
         
         let currentTime = frame.timestamp
-        // Rate limit streaming keyframes to ~3 Hz
         if currentTime - lastKeyframeTime > 0.33 {
             lastKeyframeTime = currentTime
             processAndStreamFrame(frame)
@@ -54,10 +54,8 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         let poseMatrix = frame.camera.transform
         let pixelBuffer = frame.capturedImage
         
-        // Convert CVPixelBuffer to JPEG base64
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return }
         let uiImage = UIImage(cgImage: cgImage)
         guard let jpegData = uiImage.jpegData(compressionQuality: 0.6) else { return }
         let base64Image = jpegData.base64EncodedString()

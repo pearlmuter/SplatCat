@@ -6,21 +6,22 @@ class StreamerService: ObservableObject {
     @Published var isConnected = false
     @Published var isStreaming = false
     @Published var sentFrameCount = 0
+    @Published var hostAddress = "ws://localhost:8765"
     
     private var webSocketTask: URLSessionWebSocketTask?
-    private let macAppUrl = URL(string: "ws://192.168.1.100:8765")! // Default local network Mac IP
     
     init() {
         connectToMacApp()
     }
     
     func connectToMacApp() {
+        guard let macAppUrl = URL(string: hostAddress) else { return }
         let session = URLSession(configuration: .default)
         webSocketTask = session.webSocketTask(with: macAppUrl)
         webSocketTask?.resume()
         
-        DispatchQueue.main.async {
-            self.isConnected = true
+        DispatchQueue.main.async { [weak self] in
+            self?.isConnected = true
         }
     }
     
@@ -31,7 +32,6 @@ class StreamerService: ObservableObject {
     func sendARFramePayload(pose: simd_float4x4, imageBase64: String, timestamp: TimeInterval) {
         guard isStreaming else { return }
         
-        // Flatten 4x4 matrix
         let matrixArray: [Float] = [
             pose.columns.0.x, pose.columns.0.y, pose.columns.0.z, pose.columns.0.w,
             pose.columns.1.x, pose.columns.1.y, pose.columns.1.z, pose.columns.1.w,
@@ -49,12 +49,12 @@ class StreamerService: ObservableObject {
         if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             let message = URLSessionWebSocketTask.Message.string(jsonString)
-            webSocketTask?.send(message) { error in
+            webSocketTask?.send(message) { [weak self] error in
                 if let error = error {
                     print("WebSocket send error: \(error)")
                 } else {
                     DispatchQueue.main.async {
-                        self.sentFrameCount += 1
+                        self?.sentFrameCount += 1
                     }
                 }
             }

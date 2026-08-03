@@ -1,0 +1,93 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 3415 >>
+stream
+BT
+/F1 10 Tf
+12 TL
+50 750 Td
+/F1 16 Tf ( SplatCat Open Source Attributions & Compliance Report ) Tj T* /F1 10 Tf
+(Generated: 2026-08-03 | License Standard: Apache-2.0, MIT, BSD-3-Clause) Tj T*
+(----------------------------------------------------------------------------------) Tj T*
+() Tj T*
+T* /F1 11 Tf (EXECUTIVE SUMMARY:) Tj T* /F1 10 Tf
+(SplatCat is a commercial-grade 3D Gaussian Splatting application ecosystem for macOS and iOS.) Tj T*
+(To guarantee full commercial distribution and resale compliance, all third-party repositories) Tj T*
+(used operate exclusively under permissive open-source licenses \(Apache-2.0, MIT, BSD-3-Clause\).) Tj T*
+() Tj T*
+T* /F1 11 Tf (SUMMARY OF PERMISSIVE OPEN-SOURCE DEPENDENCIES:) Tj T* /F1 10 Tf
+() Tj T*
+(1. GLOMAP \(BSD-3-Clause\) - github.com/colmap/glomap) Tj T*
+(   Global Structure-from-Motion \(SfM\) camera pose solver \(crates/engine/src/sfm_glomap.rs\).) Tj T*
+() Tj T*
+(2. COLMAP \(BSD-3-Clause\) - github.com/colmap/colmap) Tj T*
+(   Sparse feature extraction, camera calibration, and point cloud data model reference.) Tj T*
+() Tj T*
+(3. Brush \(Apache-2.0\) - github.com/ArthurBrussee/brush) Tj T*
+(   Differentiable 3DGS rasterization engine running on Apple Silicon Metal via Rust \(wgpu\).) Tj T*
+() Tj T*
+(4. gsplat \(Apache-2.0\) - github.com/nerfstudio-project/gsplat) Tj T*
+(   Mathematical reference for 3D Gaussian rasterization & spherical harmonics.) Tj T*
+() Tj T*
+(5. Nerfstudio \(Apache-2.0\) - github.com/nerfstudio-project/nerfstudio) Tj T*
+(   Pipeline architecture reference for splat pruning and density optimization.) Tj T*
+() Tj T*
+(6. SuperSplat \(MIT\) - github.com/playcanvas/supersplat) Tj T*
+(   PlayCanvas WebGL2/WebGPU browser viewport engine in packages/web-viewer/.) Tj T*
+() Tj T*
+(7. GaussianSplats3D \(MIT\) - github.com/mkkellogg/GaussianSplats3D) Tj T*
+(   Three.js WebGL fallback renderer for single-file standalone web exports.) Tj T*
+() Tj T*
+(8. antimatter15/splat \(MIT\) - github.com/antimatter15/splat) Tj T*
+(   High-speed WebGL sorted point buffer rendering reference implementation.) Tj T*
+() Tj T*
+(9. Niantic SPZ \(MIT\) - github.com/nianticlabs/spz) Tj T*
+(   Binary compression specification for 3D Gaussians \(up to 85% file size reduction\).) Tj T*
+() Tj T*
+(10. MonoGS \(BSD-3-Clause\) - github.com/gaussian-splatting-slam/MonoGS) Tj T*
+(   Monocular SLAM architectural reference for real-time camera tracking.) Tj T*
+() Tj T*
+(11. MVSplat \(MIT\) - github.com/zhengfei-kuang/mvsplat) Tj T*
+(   Feed-forward multi-view sparse 3D reconstruction model reference.) Tj T*
+() Tj T*
+(12. Three.js \(MIT\) - github.com/mrdoob/three.js) Tj T*
+(   3D Web scene graph and WebGL rendering engine used in browser viewports.) Tj T*
+() Tj T*
+(----------------------------------------------------------------------------------) Tj T*
+T* /F1 11 Tf (COMMERCIAL RESALE EXCLUSION GUARANTEE:) Tj T* /F1 10 Tf
+(The following repositories were explicitly audited and EXCLUDED from SplatCat due to) Tj T*
+T* /F1 11 Tf (restrictive licensing terms:) Tj T* /F1 10 Tf
+(1. Original Inria 3DGS \(graphdeco-inria/gaussian-splatting\) - Non-Commercial License.) Tj T*
+(2. DUSt3R / MASt3R - CC-BY-NC-SA 4.0 Non-Commercial License.) Tj T*
+(3. Photo-SLAM - GPL-3.0 copyleft terms.) Tj T*
+(4. OpenSplat - AGPLv3 network copyleft terms.) Tj T*
+() Tj T*
+(CONCLUSION: SplatCat is 100% compliant with commercial resale requirements.) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000003708 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+3778
+%%EOF

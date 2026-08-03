@@ -5,7 +5,6 @@
 
 (function () {
   let scene, camera, renderer, splatMesh;
-  let splatData = [];
   let isDemoMode = false;
   let frameCount = 0;
   let lastFpsUpdate = performance.now();
@@ -19,12 +18,20 @@
   const opacityValEl = document.getElementById('opacity-val');
   const budgetInput = document.getElementById('splat-budget');
   const budgetValEl = document.getElementById('budget-val');
-  const renderModeSelect = document.getElementById('render-mode-select');
   const fileInput = document.getElementById('file-input');
   const dropOverlay = document.getElementById('drop-overlay');
 
+  // Crop Controls
+  const cropXMin = document.getElementById('crop-x-min');
+  const cropXMax = document.getElementById('crop-x-max');
+  const cropYMin = document.getElementById('crop-y-min');
+  const cropYMax = document.getElementById('crop-y-max');
+  const cropZMin = document.getElementById('crop-z-min');
+  const cropZMax = document.getElementById('crop-z-max');
+
+  let clipPlanes = [];
+
   function initViewer() {
-    const container = document.getElementById('viewer-container');
     const canvas = document.getElementById('splat-canvas');
 
     scene = new THREE.Scene();
@@ -37,6 +44,7 @@
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.localClippingEnabled = true;
 
     // Ambient & directional light for preview modes
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -50,11 +58,32 @@
     grid.position.y = -1;
     scene.add(grid);
 
+    setupClippingPlanes();
     setupOrbitControls();
     setupEventListeners();
     loadDemoSplat();
 
     animate();
+  }
+
+  function setupClippingPlanes() {
+    clipPlanes = [
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), 10),  // Min X
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10), // Max X
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), 10),  // Min Y
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), 10), // Max Y
+      new THREE.Plane(new THREE.Vector3(0, 0, 1), 10),  // Min Z
+      new THREE.Plane(new THREE.Vector3(0, 0, -1), 10)  // Max Z
+    ];
+  }
+
+  function updateClippingPlanes() {
+    clipPlanes[0].constant = -parseFloat(cropXMin.value);
+    clipPlanes[1].constant = parseFloat(cropXMax.value);
+    clipPlanes[2].constant = -parseFloat(cropYMin.value);
+    clipPlanes[3].constant = parseFloat(cropYMax.value);
+    clipPlanes[4].constant = -parseFloat(cropZMin.value);
+    clipPlanes[5].constant = parseFloat(cropZMax.value);
   }
 
   // Simple Orbit Controls Implementation
@@ -108,7 +137,6 @@
     const colors = new Float32Array(numPoints * 3);
     const scales = new Float32Array(numPoints);
 
-    // Generate colorful 3D Gaussian Splat preview (Cat / Torus shape)
     for (let i = 0; i < numPoints; i++) {
       const u = Math.random() * Math.PI * 2;
       const v = Math.random() * Math.PI * 2;
@@ -123,7 +151,6 @@
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
-      // Vibrant Gradient Color
       const color = new THREE.Color();
       color.setHSL((u / (Math.PI * 2) + v / (Math.PI * 4)) % 1, 0.85, 0.55);
       colors[i * 3] = color.r;
@@ -145,14 +172,15 @@
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    // Custom Gaussian Splat point material
     const material = new THREE.PointsMaterial({
       size: parseFloat(scaleInput.value) * 0.06,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      depthWrite: false,
+      clippingPlanes: clipPlanes,
+      clipShadows: true
     });
 
     splatMesh = new THREE.Points(geometry, material);
@@ -174,16 +202,19 @@
       budgetValEl.textContent = (parseInt(e.target.value) / 1000).toFixed(0) + 'k';
     });
 
+    // Wire Crop Controls
+    [cropXMin, cropXMax, cropYMin, cropYMax, cropZMin, cropZMax].forEach((slider) => {
+      slider.addEventListener('input', updateClippingPlanes);
+    });
+
     document.getElementById('btn-load-demo').addEventListener('click', loadDemoSplat);
     document.getElementById('reset-camera-btn').addEventListener('click', () => {
       spherical = { radius: 3.8, theta: 0, phi: Math.PI / 3 };
       updateCameraPosition();
     });
 
-    // File Upload Handler
     fileInput.addEventListener('change', handleFileSelect);
 
-    // Drag and Drop
     window.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropOverlay.classList.remove('hidden');
@@ -216,9 +247,6 @@
 
     reader.onload = function (event) {
       const buffer = event.target.result;
-      console.log(`Loaded file ${file.name}, size: ${buffer.byteLength} bytes`);
-
-      // Mock parser reading splat bytes into 3D positions
       const count = Math.min(250000, Math.floor(buffer.byteLength / 32));
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
@@ -264,7 +292,6 @@
   <canvas id="canvas"></canvas>
   <div class="badge">🐾 Exported with SplatCat</div>
   <script>
-    // Embedded 3D Splat Viewport Logic
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 1.5, 3.5);

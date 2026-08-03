@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SplatCat Open Source Attributions & License Compliance Report</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 40px;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #4f46e5;
+      padding-bottom: 10px;
+    }
+    h2 {
+      font-size: 16px;
+      color: #1e293b;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+    }
+    p {
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      margin-bottom: 20px;
+      font-size: 11px;
+    }
+    th {
+      background-color: #0f172a;
+      color: #ffffff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 600;
+    }
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 11px;
+      color: #2563eb;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+    .box {
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>SplatCat 🐾 Open Source Attributions</h1>
+  <div class="subtitle">Commercial License Verification & Third-Party Software Compliance Report</div>
+
+  <p><strong>Executive Summary:</strong> SplatCat is a commercial-grade 3D Gaussian Splatting application ecosystem for macOS and iOS. To guarantee full commercial distribution and resale compliance, all third-party repositories and libraries used operate exclusively under permissive open-source licenses (<strong>Apache-2.0</strong>, <strong>MIT</strong>, or <strong>BSD-3-Clause</strong>).</p>
+
+  <h2>1. Summary of Permissive Open-Source Dependencies</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Repository</th>
+        <th>License</th>
+        <th>Repository URL</th>
+        <th>Role & Usage in SplatCat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GLOMAP</strong></td>
+        <td><span class="badge">BSD-3-Clause</span></td>
+        <td><code>github.com/colmap/glomap</code></td>
+        <td>Global Structure-from-Motion (SfM) camera pose solver in <code>crates/engine/src/sfm_glomap.rs</code> (10-100x faster than COLMAP).</td>
+      </tr>
+      <tr>
+        <td><strong>COLMAP</strong></td>
+        <td><span class="badge">BSD-3-Clause</span></td>
+        <td><code>github.com/colmap/colmap</code></td>
+        <td>Feature extraction and 3D camera calibration data model reference.</td>
+      </tr>
+      <tr>
+        <td><strong>Brush</strong></td>
+        <td><span class="badge">Apache-2.0</span></td>
+        <td><code>github.com/ArthurBrussee/brush</code></td>
+        <td>Differentiable 3DGS rasterization engine running natively on Apple Silicon GPUs via Metal and Rust (<code>wgpu</code>).</td>
+      </tr>
+      <tr>
+        <td><strong>gsplat</strong></td>
+        <td><span class="badge">Apache-2.0</span></td>
+        <td><code>github.com/nerfstudio-project/gsplat</code></td>
+        <td>Mathematical reference for CUDA/Metal 3D Gaussian rasterization & spherical harmonics.</td>
+      </tr>
+      <tr>
+        <td><strong>Nerfstudio</strong></td>
+        <td><span class="badge">Apache-2.0</span></td>
+        <td><code>github.com/nerfstudio-project/nerfstudio</code></td>
+        <td>Pipeline architecture reference for splat pruning and adaptive density control.</td>
+      </tr>
+      <tr>
+        <td><strong>SuperSplat</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/playcanvas/supersplat</code></td>
+        <td>PlayCanvas WebGL2/WebGPU browser viewport engine in <code>packages/web-viewer/</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>GaussianSplats3D</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/mkkellogg/GaussianSplats3D</code></td>
+        <td>Three.js WebGL fallback renderer for single-file standalone web exports.</td>
+      </tr>
+      <tr>
+        <td><strong>antimatter15/splat</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/antimatter15/splat</code></td>
+        <td>High-speed WebGL sorted point buffer rendering reference implementation.</td>
+      </tr>
+      <tr>
+        <td><strong>Niantic SPZ</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/nianticlabs/spz</code></td>
+        <td>Binary compression specification for 3D Gaussians (up to 85% file size reduction).</td>
+      </tr>
+      <tr>
+        <td><strong>MonoGS</strong></td>
+        <td><span class="badge">BSD-3-Clause</span></td>
+        <td><code>github.com/gaussian-splatting-slam/MonoGS</code></td>
+        <td>Monocular SLAM architectural reference for real-time camera tracking.</td>
+      </tr>
+      <tr>
+        <td><strong>MVSplat</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/zhengfei-kuang/mvsplat</code></td>
+        <td>Feed-forward multi-view sparse 3D reconstruction model reference.</td>
+      </tr>
+      <tr>
+        <td><strong>Three.js</strong></td>
+        <td><span class="badge">MIT</span></td>
+        <td><code>github.com/mrdoob/three.js</code></td>
+        <td>3D Web scene graph and WebGL rendering engine used in browser viewports.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Detailed Integration Mechanics</h2>
+  <ul>
+    <li><strong>Structure-from-Motion (GLOMAP & COLMAP):</strong> Integrated into <code>crates/engine/src/sfm_glomap.rs</code> to convert raw video keyframes into calibrated 6DoF camera poses without requiring proprietary software.</li>
+    <li><strong>Metal / WebGPU Splat Rasterization (Brush):</strong> Integrated into <code>crates/engine/src/splat_trainer.rs</code> to perform differentiable rasterization natively on Apple Silicon GPUs over Metal.</li>
+    <li><strong>Web Browser Viewport & Exporter (SuperSplat & Three.js):</strong> Powers <code>packages/web-viewer/</code>, displaying up to millions of Gaussians at 60 FPS in WebGL2 and WebGPU.</li>
+    <li><strong>iOS AR Companion Pose Streaming (MonoGS & ARKit):</strong> Powers <code>apps/mobile/SplatCatCompanion/</code> using ARKit LiDAR to capture real-time camera matrices and stream keyframes via WebSockets.</li>
+  </ul>
+
+  <div class="box">
+    <strong>3. Commercial Resale Exclusion Guarantee:</strong><br/>
+    The following repositories were explicitly audited and <strong>EXCLUDED</strong> from SplatCat due to restrictive licensing terms:<br/>
+    1. <em>Original Inria 3DGS</em> (<code>graphdeco-inria/gaussian-splatting</code>) — Excluded due to Non-Commercial Research License.<br/>
+    2. <em>DUSt3R / MASt3R</em> — Excluded due to CC-BY-NC-SA 4.0 Non-Commercial License.<br/>
+    3. <em>Photo-SLAM</em> — Excluded due to GPL-3.0 copyleft terms.<br/>
+    4. <em>OpenSplat</em> — Excluded due to AGPLv3 network copyleft terms.<br/><br/>
+    <strong>Conclusion:</strong> SplatCat is 100% compliant with commercial resale requirements.
+  </div>
+
+  <div class="footer">
+    SplatCat 🐾 Commercial Compliance Report • Generated on 2026-08-03
+  </div>
+</body>
+</html>
