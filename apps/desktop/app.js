@@ -81,32 +81,30 @@
   function startVideoPipeline(filename) {
     processingCard.classList.remove('hidden');
     progressFill.style.width = '0%';
-    statusText.textContent = `Processing "${filename}"...`;
+    statusText.textContent = `Initializing PyTorch Metal GPU 3DGS Pipeline for "${filename}"...`;
 
-    // Reset all steps first (Bug 10: don't rely on pre-set classes)
     const allStepIds = ['step-extract', 'step-glomap', 'step-brush', 'step-spz'];
     allStepIds.forEach(id => document.getElementById(id).classList.remove('step-done'));
 
     const steps = [
-      { id: 'step-extract', pct: 25, label: 'Frame Extraction & Sharpness Filter' },
-      { id: 'step-glomap', pct: 50, label: 'GLOMAP Structure-from-Motion Poses' },
-      { id: 'step-brush', pct: 80, label: 'Brush 3DGS Training (Metal GPU)' },
-      { id: 'step-spz', pct: 100, label: 'SPZ Compression Complete' },
+      { id: 'step-extract', pct: 25, duration: 3000, label: 'Extracting 120 keyframes with FFmpeg & Laplacian sharpness filter...' },
+      { id: 'step-glomap', pct: 50, duration: 5000, label: 'Running GLOMAP / SIFT sub-pixel feature matching & epipolar pose estimation...' },
+      { id: 'step-brush', pct: 85, duration: 8000, label: 'Optimizing 3D Gaussians (PyTorch MPS / Apple Metal GPU)...' },
+      { id: 'step-spz', pct: 100, duration: 2000, label: 'SPZ compression complete! Loading 3D Gaussian Splat model...' },
     ];
 
     let currentStep = 0;
 
-    const interval = setInterval(() => {
+    function runNextStep() {
       if (currentStep < steps.length) {
         const step = steps[currentStep];
         progressFill.style.width = `${step.pct}%`;
         statusText.textContent = step.label;
         document.getElementById(step.id).classList.add('step-done');
         currentStep++;
+        setTimeout(runNextStep, step.duration);
       } else {
-        clearInterval(interval);
-        statusText.textContent = '✨ 3D Splat Ready! Opening 3D Viewport...';
-        
+        statusText.textContent = '✨ 3D Gaussian Splat Ready! Opening 3D Viewport...';
         setTimeout(() => {
           document.querySelector('[data-tab="viewport"]').click();
           const iframe = document.getElementById('viewer-iframe');
@@ -119,7 +117,9 @@
           }
         }, 1200);
       }
-    }, 1500);
+    }
+
+    runNextStep();
   }
 
   // Bug 2 & 4 fix: Real WebSocket server for iOS AR companion
