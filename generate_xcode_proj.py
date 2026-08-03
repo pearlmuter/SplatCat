@@ -17,6 +17,7 @@ def create_xcode_project():
 		1002 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2002 /* ViewController.swift */; };
 		1003 /* HeatmapShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 2003 /* HeatmapShader.metal */; };
 		1004 /* StreamerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2004 /* StreamerService.swift */; };
+		1005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2005 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@ def create_xcode_project():
 		2002 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		2003 /* HeatmapShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = HeatmapShader.metal; sourceTree = "<group>"; };
 		2004 /* StreamerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamerService.swift; sourceTree = "<group>"; };
+		2005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +39,17 @@ def create_xcode_project():
 		};
 /* End PBXFrameworksBuildPhase section */
 
+/* Begin PBXResourcesBuildPhase section */
+		3002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1005 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXGroup section */
 		4001 /* Main Group */ = {
 			isa = PBXGroup;
@@ -45,6 +58,7 @@ def create_xcode_project():
 				2002 /* ViewController.swift */,
 				2003 /* HeatmapShader.metal */,
 				2004 /* StreamerService.swift */,
+				2005 /* Assets.xcassets */,
 				0001 /* SplatCatCompanion.app */,
 			);
 			sourceTree = "<group>";
@@ -58,6 +72,7 @@ def create_xcode_project():
 			buildPhases = (
 				7001 /* Sources */,
 				3001 /* Frameworks */,
+				3002 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -120,6 +135,7 @@ def create_xcode_project():
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -146,6 +162,7 @@ def create_xcode_project():
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -196,7 +213,7 @@ def create_xcode_project():
 """
     with open(os.path.join(proj_dir, "project.pbxproj"), "w") as f:
         f.write(pbxproj_content)
-    print(f"Successfully generated {proj_dir}")
+    print(f"Successfully regenerated {proj_dir}")
 
 if __name__ == "__main__":
     create_xcode_project()
