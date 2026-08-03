@@ -33,19 +33,8 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
-/* Begin PBXResourcesBuildPhase section */
-		3002 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1005 /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXGroup section */
-		4001 /* Main Group */ = {
+		4001 = {
 			isa = PBXGroup;
 			children = (
 				2001 /* SplatCatCompanionApp.swift */,
@@ -92,7 +81,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 6002 /* Build configuration list for PBXProject "SplatCat" */;
+			buildConfigurationList = 6002 /* Build configuration list for PBXProject "SplatCatCompanion" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -100,7 +89,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 4001 /* Main Group */;
+			mainGroup = 4001;
 			productRefGroup = 4001;
 			projectDirPath = "";
 			projectRoot = "";
@@ -109,6 +98,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1005 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7001 /* Sources */ = {
@@ -133,6 +133,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3FY4D2C459;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SplatCat;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SplatCat requires camera access for 3D scanning";
@@ -144,7 +145,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.splatcat.SplatCatCompanion";
+				PRODUCT_BUNDLE_IDENTIFIER = com.splatcat.SplatCatCompanion;
 				PRODUCT_NAME = SplatCat;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_TARGETS = YES;
@@ -161,6 +162,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3FY4D2C459;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SplatCat;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SplatCat requires camera access for 3D scanning";
@@ -172,7 +174,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.splatcat.SplatCatCompanion";
+				PRODUCT_BUNDLE_IDENTIFIER = com.splatcat.SplatCatCompanion;
 				PRODUCT_NAME = SplatCat;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_TARGETS = YES;
@@ -193,7 +195,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6002 /* Build configuration list for PBXProject "SplatCat" */ = {
+		6002 /* Build configuration list for PBXProject "SplatCatCompanion" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9001 /* Debug */,

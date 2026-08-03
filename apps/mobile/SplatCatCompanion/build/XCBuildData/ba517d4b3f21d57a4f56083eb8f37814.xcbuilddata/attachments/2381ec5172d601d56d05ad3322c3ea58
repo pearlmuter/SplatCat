@@ -1,0 +1,49 @@
+{
+  "" : {
+    "diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCat-primary.dia",
+    "emit-module-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCat-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCat-primary-emit-module.dia",
+    "pch" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCat-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCat-primary.swiftdeps"
+  },
+  "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/SplatCatCompanionApp.swift" : {
+    "const-values" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.swiftconstvalues",
+    "dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.d",
+    "diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.dia",
+    "index-unit-output-path" : "/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.o",
+    "llvm-bc" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.bc",
+    "object" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.o",
+    "swift-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp.swiftdeps",
+    "swiftmodule" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/SplatCatCompanionApp~partial.swiftmodule"
+  },
+  "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/StreamerService.swift" : {
+    "const-values" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.swiftconstvalues",
+    "dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.d",
+    "diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.dia",
+    "index-unit-output-path" : "/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.o",
+    "llvm-bc" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.bc",
+    "object" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.o",
+    "swift-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService.swiftdeps",
+    "swiftmodule" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/StreamerService~partial.swiftmodule"
+  },
+  "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/ViewController.swift" : {
+    "const-values" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.swiftconstvalues",
+    "dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.d",
+    "diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.dia",
+    "index-unit-output-path" : "/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.o",
+    "llvm-bc" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.bc",
+    "object" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.o",
+    "swift-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController.swiftdeps",
+    "swiftmodule" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/ViewController~partial.swiftmodule"
+  },
+  "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/emil/Documents/Codex/SplatCat/apps/mobile/SplatCatCompanion/build/SplatCatCompanion.build/Release-iphonesimulator/SplatCat.build/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

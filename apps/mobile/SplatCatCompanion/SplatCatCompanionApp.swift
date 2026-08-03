@@ -14,54 +14,81 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+            
             ARViewContainer(streamer: streamer)
                 .edgesIgnoringSafeArea(.all)
             
             VStack {
                 HStack {
-                    Text("🐾 SplatCat AR Companion")
-                        .font(.headline)
-                        .padding(8)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(10)
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Image(uiImage: UIImage(named: "AppIcon") ?? UIImage())
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .cornerRadius(6)
+                        Text("SplatCat")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.75))
+                    .cornerRadius(12)
+                    
                     Spacer()
-                    Text(streamer.isConnected ? "🟢 Streaming" : "🔴 Disconnected")
-                        .font(.subheadline)
-                        .padding(8)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(10)
-                        .foregroundColor(.white)
+                    
+                    Text(streamer.isConnected ? "🟢 Connected" : "🔴 Offline")
+                        .font(.caption)
+                        .bold()
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.75))
+                        .cornerRadius(12)
+                        .foregroundColor(streamer.isConnected ? .green : .red)
                 }
                 .padding()
                 
                 Spacer()
                 
-                HStack(spacing: 20) {
-                    VStack {
-                        Text("Sent Frames")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text("\(streamer.sentFrameCount)")
-                            .font(.title2)
-                            .bold()
-                            .foregroundColor(.cyan)
+                VStack(spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Mac Server")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text(streamer.hostAddress)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundColor(.cyan)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing) {
+                            Text("Streamed Poses")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text("\(streamer.sentFrameCount)")
+                                .font(.title3)
+                                .bold()
+                                .foregroundColor(.white)
+                        }
                     }
                     
                     Button(action: {
                         streamer.toggleStreaming()
                     }) {
-                        Text(streamer.isStreaming ? "Stop Live Stream" : "Start Live Stream")
-                            .bold()
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(streamer.isStreaming ? Color.red : Color.indigo)
-                            .foregroundColor(.white)
-                            .cornerRadius(16)
+                        HStack {
+                            Image(systemName: streamer.isStreaming ? "stop.fill" : "record.circle.fill")
+                            Text(streamer.isStreaming ? "Stop Live Scanning Stream" : "Start Live Scanning Stream")
+                                .bold()
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(streamer.isStreaming ? Color.red : Color.indigo)
+                        .foregroundColor(.white)
+                        .cornerRadius(16)
                     }
                 }
                 .padding()
-                .background(Color.black.opacity(0.75))
+                .background(Color.black.opacity(0.85))
                 .cornerRadius(20)
                 .padding()
             }

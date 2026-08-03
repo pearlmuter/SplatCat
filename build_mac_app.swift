@@ -6,6 +6,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     var webView: WKWebView!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set dynamic Dock icon
+        let iconPath = "/Users/emil/Documents/Codex/SplatCat/apps/desktop/icon_true.png"
+        if let iconImage = NSImage(contentsOfFile: iconPath) {
+            NSApp.applicationIconImage = iconImage
+        }
+
         let windowMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1280, height: 830),
