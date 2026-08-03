@@ -1,0 +1,10 @@
+[package]
+name = "splatcat-desktop"
+version = "0.1.0"
+description = "SplatCat macOS Application"
+authors = ["Antigravity Team"]
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+splatcat-engine = { path = "../../../crates/engine" }

@@ -1,0 +1,9 @@
+[package]
+name = "splatcat-engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["Antigravity Team"]
+license = "Apache-2.0"
+description = "Core 3D Gaussian Splatting engine for macOS (Metal / wgpu, GLOMAP SfM, SPZ compression)"
+
+[dependencies]

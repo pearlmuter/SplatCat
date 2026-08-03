@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SplatCat - macOS 3D Gaussian Splatting Suite</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">🐾</span>
+        <span class="title">SplatCat <small>v0.1</small></span>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="create">
+          <span class="icon">🎬</span> Studio & Upload
+        </button>
+        <button class="nav-item" data-tab="viewport">
+          <span class="icon">👁️</span> 3D WebGPU Viewport
+        </button>
+        <button class="nav-item" data-tab="live">
+          <span class="icon">📱</span> iOS AR Scanner <span class="pulse-dot"></span>
+        </button>
+        <button class="nav-item" data-tab="export">
+          <span class="icon">🚀</span> Web Exporter
+        </button>
+      </nav>
+
+      <div class="system-status-card">
+        <div class="status-header">
+          <span class="status-title">Metal GPU Backend</span>
+          <span class="status-badge active">Online</span>
+        </div>
+        <div class="metric-row">
+          <span>Device</span>
+          <span class="val">Apple Silicon M-Series</span>
+        </div>
+        <div class="metric-row">
+          <span>Engine</span>
+          <span class="val">Brush (Rust/wgpu)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- TAB 1: STUDIO & UPLOAD -->
+      <section id="tab-create" class="tab-page active">
+        <div class="page-header">
+          <h1>Create 3D Gaussian Splat from Video</h1>
+          <p>Drop a video file or record an object to generate a photorealistic 3D Gaussian Splat model.</p>
+        </div>
+
+        <div class="upload-container" id="video-dropzone">
+          <div class="upload-box">
+            <div class="upload-icon">🎥</div>
+            <h2>Drag & Drop your video here</h2>
+            <p>Supports MP4, MOV, WEBM (Recommended 1080p @ 30/60fps, 10–60 seconds)</p>
+            <label class="btn btn-primary">
+              <input type="file" id="video-file-input" accept="video/*" hidden>
+              Select Video File
+            </label>
+          </div>
+        </div>
+
+        <!-- Processing Timeline Bar -->
+        <div class="card timeline-card hidden" id="processing-card">
+          <div class="card-header">
+            <h3>3D Reconstruction Pipeline Progress</h3>
+            <span id="pipeline-status-text" class="tag">Extracting Keyframes...</span>
+          </div>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+
+          <div class="pipeline-steps">
+            <div class="step step-done" id="step-extract">
+              <div class="step-num">1</div>
+              <div class="step-label">Frame Extraction</div>
+            </div>
+            <div class="step" id="step-glomap">
+              <div class="step-num">2</div>
+              <div class="step-label">GLOMAP SfM Poses</div>
+            </div>
+            <div class="step" id="step-brush">
+              <div class="step-num">3</div>
+              <div class="step-label">Brush 3DGS Training</div>
+            </div>
+            <div class="step" id="step-spz">
+              <div class="step-num">4</div>
+              <div class="step-label">SPZ Compression</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: 3D VIEWPORT -->
+      <section id="tab-viewport" class="tab-page">
+        <iframe src="../../packages/web-viewer/index.html" class="embedded-viewer-frame" id="viewer-iframe"></iframe>
+      </section>
+
+      <!-- TAB 3: iOS AR SCANNER -->
+      <section id="tab-live" class="tab-page">
+        <div class="page-header">
+          <h1>iOS Companion AR Scanning Streamer</h1>
+          <p>Scan objects live with an iPhone/iPad LiDAR camera and stream pre-posed keyframes directly to SplatCat.</p>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3>Local Server Connection</h3>
+            <div class="connection-info">
+              <div class="info-row">
+                <span>WebSocket Endpoint</span>
+                <code class="code-pill">ws://localhost:8765</code>
+              </div>
+              <div class="info-row">
+                <span>Status</span>
+                <span class="badge badge-success">Listening for iOS app...</span>
+              </div>
+              <div class="info-row">
+                <span>Received AR Frames</span>
+                <span id="ar-frame-count" class="bold">0</span>
+              </div>
+            </div>
+
+            <div class="ar-instructions">
+              <h4>How to connect iOS Companion App:</h4>
+              <ol>
+                <li>Open <strong>SplatCat Companion</strong> on your iPhone/iPad.</li>
+                <li>Point camera at object. Scanned surfaces will highlight green via Metal LiDAR heatmap.</li>
+                <li>Tap <strong>Start Live Stream</strong> to stream poses & keyframes to your Mac.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Live Coverage & Feed Preview</h3>
+            <div class="preview-box" id="live-preview-box">
+              <div class="preview-placeholder">
+                <span class="placeholder-icon">📡</span>
+                <span>Waiting for camera feed from iOS app...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: WEB EXPORTER -->
+      <section id="tab-export" class="tab-page">
+        <div class="page-header">
+          <h1>Export for Web Browsers</h1>
+          <p>Share your 3D Gaussian Splats anywhere on the web with permissively licensed MIT/Apache-2.0 viewers.</p>
+        </div>
+
+        <div class="card export-card">
+          <h3>Generate Standalone Web Package</h3>
+          <p>Creates a self-contained single-file HTML5 viewer embedded with compressed SPZ splat model data.</p>
+          
+          <div class="export-options">
+            <label class="checkbox-option">
+              <input type="checkbox" checked id="opt-spz">
+              <span>Compress splat model using SPZ algorithm (up to 85% size reduction)</span>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" checked id="opt-supersplat">
+              <span>Use PlayCanvas SuperSplat WebGPU engine</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary btn-large" id="btn-export-desktop">
+            🚀 Generate & Download Web Bundle
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

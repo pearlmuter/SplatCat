@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SplatCat Web Viewer - 3D Gaussian Splatting</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <div id="viewer-container">
+    <canvas id="splat-canvas"></canvas>
+
+    <!-- Overlay UI -->
+    <header class="glass-header">
+      <div class="brand">
+        <div class="logo-icon">🐾</div>
+        <span class="brand-name">SplatCat <span class="badge">WebGPU/WebGL</span></span>
+      </div>
+      <div class="header-actions">
+        <label class="btn btn-secondary">
+          <input type="file" id="file-input" accept=".splat,.spz,.ply" hidden>
+          📁 Open Splat File
+        </label>
+        <button id="btn-load-demo" class="btn btn-secondary">✨ Load Demo Splat</button>
+        <button id="btn-export-html" class="btn btn-primary">🚀 Export HTML Package</button>
+      </div>
+    </header>
+
+    <!-- Stats Panel -->
+    <div class="glass-card stats-card" id="stats-panel">
+      <div class="stat-item">
+        <span class="stat-label">FPS</span>
+        <span class="stat-value highlight" id="fps-val">60</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-label">Splat Count</span>
+        <span class="stat-value" id="splat-count-val">0</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-label">Format</span>
+        <span class="stat-value" id="format-val">SPZ</span>
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="glass-card controls-card" id="controls-panel">
+      <div class="panel-header">
+        <h3>Viewport Controls</h3>
+        <button id="toggle-controls-btn" class="icon-btn">─</button>
+      </div>
+      
+      <div class="control-group">
+        <label>Splat Scale (<span id="scale-val">1.0</span>)</label>
+        <input type="range" id="splat-scale" min="0.1" max="3.0" step="0.05" value="1.0">
+      </div>
+
+      <div class="control-group">
+        <label>Opacity Threshold (<span id="opacity-val">0.05</span>)</label>
+        <input type="range" id="splat-opacity" min="0.00" max="0.5" step="0.01" value="0.05">
+      </div>
+
+      <div class="control-group">
+        <label>Point Budget (<span id="budget-val">500k</span>)</label>
+        <input type="range" id="splat-budget" min="100000" max="2000000" step="50000" value="500000">
+      </div>
+
+      <div class="control-group">
+        <label>Render Mode</label>
+        <select id="render-mode-select" class="select-input">
+          <option value="gaussian">3D Gaussian Splats</option>
+          <option value="points">Point Cloud</option>
+          <option value="ellipsoid">Bounding Ellipsoids</option>
+        </select>
+      </div>
+
+      <div class="panel-section-title">Crop Box</div>
+      <div class="control-group dual-range">
+        <label>X-Crop</label>
+        <div class="range-inputs">
+          <input type="range" id="crop-x-min" min="-10" max="0" value="-10" step="0.2">
+          <input type="range" id="crop-x-max" min="0" max="10" value="10" step="0.2">
+        </div>
+      </div>
+      <div class="control-group dual-range">
+        <label>Y-Crop</label>
+        <div class="range-inputs">
+          <input type="range" id="crop-y-min" min="-10" max="0" value="-10" step="0.2">
+          <input type="range" id="crop-y-max" min="0" max="10" value="10" step="0.2">
+        </div>
+      </div>
+      <div class="control-group dual-range">
+        <label>Z-Crop</label>
+        <div class="range-inputs">
+          <input type="range" id="crop-z-min" min="-10" max="0" value="-10" step="0.2">
+          <input type="range" id="crop-z-max" min="0" max="10" value="10" step="0.2">
+        </div>
+      </div>
+
+      <button id="reset-camera-btn" class="btn btn-secondary btn-full">🎥 Reset Camera</button>
+    </div>
+
+    <!-- Drop Zone Overlay -->
+    <div id="drop-overlay" class="drop-overlay hidden">
+      <div class="drop-content">
+        <div class="drop-icon">📦</div>
+        <h2>Drop `.splat`, `.spz`, or `.ply` file here</h2>
+        <p>SplatCat will automatically render and parse your 3D model</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="viewer.js"></script>
+</body>
+</html>
