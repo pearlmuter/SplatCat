@@ -308,6 +308,9 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 @class ARSession;
 @class ARFrame;
 @class ARCamera;
+@protocol SCNSceneRenderer;
+@class ARAnchor;
+@class SCNNode;
 @class NSString;
 @class NSBundle;
 @class NSCoder;
@@ -319,6 +322,8 @@ SWIFT_CLASS("_TtC8SplatCat23ARScannerViewController")
 - (void)viewWillDisappear:(BOOL)animated;
 - (void)session:(ARSession * _Nonnull)session didUpdateFrame:(ARFrame * _Nonnull)frame;
 - (void)session:(ARSession * _Nonnull)session cameraDidChangeTrackingState:(ARCamera * _Nonnull)camera;
+- (SCNNode * _Nullable)renderer:(id <SCNSceneRenderer> _Nonnull)renderer nodeForAnchor:(ARAnchor * _Nonnull)anchor SWIFT_WARN_UNUSED_RESULT;
+- (void)renderer:(id <SCNSceneRenderer> _Nonnull)renderer didUpdateNode:(SCNNode * _Nonnull)node forAnchor:(ARAnchor * _Nonnull)anchor;
 - (nonnull instancetype)initWithNibName:(NSString * _Nullable)nibNameOrNil bundle:(NSBundle * _Nullable)nibBundleOrNil OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -641,6 +646,9 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 @class ARSession;
 @class ARFrame;
 @class ARCamera;
+@protocol SCNSceneRenderer;
+@class ARAnchor;
+@class SCNNode;
 @class NSString;
 @class NSBundle;
 @class NSCoder;
@@ -652,6 +660,8 @@ SWIFT_CLASS("_TtC8SplatCat23ARScannerViewController")
 - (void)viewWillDisappear:(BOOL)animated;
 - (void)session:(ARSession * _Nonnull)session didUpdateFrame:(ARFrame * _Nonnull)frame;
 - (void)session:(ARSession * _Nonnull)session cameraDidChangeTrackingState:(ARCamera * _Nonnull)camera;
+- (SCNNode * _Nullable)renderer:(id <SCNSceneRenderer> _Nonnull)renderer nodeForAnchor:(ARAnchor * _Nonnull)anchor SWIFT_WARN_UNUSED_RESULT;
+- (void)renderer:(id <SCNSceneRenderer> _Nonnull)renderer didUpdateNode:(SCNNode * _Nonnull)node forAnchor:(ARAnchor * _Nonnull)anchor;
 - (nonnull instancetype)initWithNibName:(NSString * _Nullable)nibNameOrNil bundle:(NSBundle * _Nullable)nibBundleOrNil OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder OBJC_DESIGNATED_INITIALIZER;
 @end

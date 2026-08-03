@@ -10,6 +10,10 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
     private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
     private var statusLabel: UILabel!
     
+    // Heatmap overlay tracking
+    private var scannedAnchors: Set<UUID> = []
+    private var heatmapMaterial: SCNMaterial?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -42,7 +46,7 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
             statusLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             statusLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             statusLabel.heightAnchor.constraint(equalToConstant: 28),
-            statusLabel.widthAnchor.constraint(equalToConstant: 220)
+            statusLabel.widthAnchor.constraint(equalToConstant: 260)
         ])
         
         sceneView.delegate = self
@@ -53,6 +57,7 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         let scene = SCNScene()
         sceneView.scene = scene
         
+        setupHeatmapMaterial()
         checkCameraPermissionAndRun()
     }
     
@@ -70,6 +75,19 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         super.viewWillDisappear(animated)
         sceneView.session.pause()
     }
+    
+    // MARK: - Heatmap Material Setup (Bug 9 fix: actually use the shader concept)
+    
+    private func setupHeatmapMaterial() {
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(red: 0.0, green: 0.95, blue: 0.6, alpha: 0.35)
+        material.isDoubleSided = true
+        material.fillMode = .fill
+        material.transparencyMode = .dualLayer
+        heatmapMaterial = material
+    }
+    
+    // MARK: - Camera Permissions
     
     private func checkCameraPermissionAndRun() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -92,6 +110,8 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         }
     }
     
+    // MARK: - AR Session Configuration (Bug 3 fix: guard LiDAR features)
+    
     private func runARSession() {
         guard ARWorldTrackingConfiguration.isSupported else {
             statusLabel.text = "ARKit Not Supported (Simulator)"
@@ -100,6 +120,8 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
         }
         
         let config = ARWorldTrackingConfiguration()
+        
+        // LiDAR mesh reconstruction — only on Pro devices that support it
         if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             config.sceneReconstruction = .meshWithClassification
             statusLabel.text = "LiDAR Mesh Tracking Active"
@@ -107,14 +129,19 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
             statusLabel.text = "Visual 6DoF Tracking Active"
         }
         
-        config.frameSemantics = [.smoothedSceneDepth]
+        // Depth — only request if hardware supports it (Bug 3: crashes on iPhone 13 non-Pro)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            config.frameSemantics.insert(.smoothedSceneDepth)
+        }
+        
         config.environmentTexturing = .automatic
         config.isLightEstimationEnabled = true
         
         sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
     
-    // ARSessionDelegate - Called for every ARFrame
+    // MARK: - ARSessionDelegate
+    
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         guard let streamer = streamer, streamer.isStreaming else { return }
         
@@ -131,13 +158,73 @@ class ARScannerViewController: UIViewController, ARSCNViewDelegate, ARSessionDel
             statusLabel.text = "🟢 Tracking Normal"
             statusLabel.textColor = .green
         case .limited(let reason):
-            statusLabel.text = "⚠️ Tracking Limited (\(reason))"
+            let reasonStr: String
+            switch reason {
+            case .initializing: reasonStr = "Initializing"
+            case .excessiveMotion: reasonStr = "Move Slower"
+            case .insufficientFeatures: reasonStr = "Low Detail"
+            case .relocalizing: reasonStr = "Relocalizing"
+            @unknown default: reasonStr = "Unknown"
+            }
+            statusLabel.text = "⚠️ Limited: \(reasonStr)"
             statusLabel.textColor = .orange
         case .notAvailable:
             statusLabel.text = "❌ Tracking Not Available"
             statusLabel.textColor = .red
         }
     }
+    
+    // MARK: - ARSCNViewDelegate (Bug 9 fix: visualize mesh anchors with heatmap)
+    
+    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
+        guard let meshAnchor = anchor as? ARMeshAnchor else { return nil }
+        
+        let node = SCNNode()
+        let geometry = createGeometry(from: meshAnchor)
+        geometry.materials = [heatmapMaterial ?? SCNMaterial()]
+        node.geometry = geometry
+        scannedAnchors.insert(meshAnchor.identifier)
+        return node
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
+        guard let meshAnchor = anchor as? ARMeshAnchor else { return }
+        let geometry = createGeometry(from: meshAnchor)
+        geometry.materials = [heatmapMaterial ?? SCNMaterial()]
+        node.geometry = geometry
+    }
+    
+    private func createGeometry(from meshAnchor: ARMeshAnchor) -> SCNGeometry {
+        let vertices = meshAnchor.geometry.vertices
+        let faces = meshAnchor.geometry.faces
+        
+        let vertexSource = SCNGeometrySource(
+            buffer: vertices.buffer,
+            vertexFormat: vertices.format,
+            semantic: .vertex,
+            vertexCount: vertices.count,
+            dataOffset: vertices.offset,
+            dataStride: vertices.stride
+        )
+        
+        let faceByteCount = faces.count * faces.indexCountPerPrimitive * faces.bytesPerIndex
+        let faceData = Data(
+            bytesNoCopy: faces.buffer.contents(),
+            count: faceByteCount,
+            deallocator: .none
+        )
+        
+        let faceElement = SCNGeometryElement(
+            data: faceData,
+            primitiveType: .triangles,
+            primitiveCount: faces.count,
+            bytesPerIndex: faces.bytesPerIndex
+        )
+        
+        return SCNGeometry(sources: [vertexSource], elements: [faceElement])
+    }
+    
+    // MARK: - Frame Streaming
     
     private func processAndStreamFrame(_ frame: ARFrame) {
         let poseMatrix = frame.camera.transform

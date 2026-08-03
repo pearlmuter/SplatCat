@@ -61,6 +61,7 @@
     setupClippingPlanes();
     setupOrbitControls();
     setupEventListeners();
+    setupResizeHandler();
     loadDemoSplat();
 
     animate();
@@ -195,7 +196,7 @@
 
     opacityInput.addEventListener('input', (e) => {
       opacityValEl.textContent = e.target.value;
-      if (splatMesh) splatMesh.material.opacity = 1.0 - parseFloat(e.target.value);
+      if (splatMesh) splatMesh.material.opacity = parseFloat(e.target.value);
     });
 
     budgetInput.addEventListener('input', (e) => {
@@ -256,9 +257,12 @@
       for (let i = 0; i < count; i++) {
         const offset = i * 32;
         if (offset + 24 <= buffer.byteLength) {
-          positions[i * 3] = view.getFloat32(offset, true) || (Math.random() - 0.5) * 3;
-          positions[i * 3 + 1] = view.getFloat32(offset + 4, true) || (Math.random() - 0.5) * 3;
-          positions[i * 3 + 2] = view.getFloat32(offset + 8, true) || (Math.random() - 0.5) * 3;
+          const px = view.getFloat32(offset, true);
+          const py = view.getFloat32(offset + 4, true);
+          const pz = view.getFloat32(offset + 8, true);
+          positions[i * 3] = Number.isFinite(px) ? px : (Math.random() - 0.5) * 3;
+          positions[i * 3 + 1] = Number.isFinite(py) ? py : (Math.random() - 0.5) * 3;
+          positions[i * 3 + 2] = Number.isFinite(pz) ? pz : (Math.random() - 0.5) * 3;
 
           colors[i * 3] = (view.getUint8(offset + 12) || 200) / 255;
           colors[i * 3 + 1] = (view.getUint8(offset + 13) || 150) / 255;
@@ -339,6 +343,15 @@
     }
 
     renderer.render(scene, camera);
+  }
+
+  // Bug 7 fix: handle window resize
+  function setupResizeHandler() {
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   }
 
   window.addEventListener('DOMContentLoaded', initViewer);
