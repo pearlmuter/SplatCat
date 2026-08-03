@@ -1,3 +1,4 @@
 /target
+/.venv
 *.lock
 .DS_Store
