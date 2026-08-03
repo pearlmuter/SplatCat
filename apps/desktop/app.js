@@ -42,6 +42,14 @@
   }
 
   function setupVideoUpload() {
+    const btnSelectVideo = document.getElementById('btn-select-video');
+    if (btnSelectVideo) {
+      btnSelectVideo.addEventListener('click', (e) => {
+        e.stopPropagation();
+        videoInput.click();
+      });
+    }
+
     videoInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         startVideoPipeline(e.target.files[0].name);

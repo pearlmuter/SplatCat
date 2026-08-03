@@ -59,7 +59,7 @@ class LiveWebSocketServer {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScriptMessageHandler {
+class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
     var window: NSWindow!
     var webView: WKWebView!
     let wsServer = LiveWebSocketServer()
@@ -92,6 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScri
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         
         let appHtmlPath = "/Users/emil/Documents/Codex/SplatCat/apps/desktop/index.html"
         let url = URL(fileURLWithPath: appHtmlPath)
@@ -112,6 +113,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScri
             }
         }
         wsServer.start(port: 8765)
+    }
+
+    // Handle WKWebView file upload dialogs (NSOpenPanel)
+    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = false
+        openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection
+        openPanel.message = "Select Video File for 3D Gaussian Splatting"
+        openPanel.begin { response in
+            if response == .OK {
+                completionHandler(openPanel.urls)
+            } else {
+                completionHandler(nil)
+            }
+        }
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
