@@ -7,3 +7,4 @@ license = "Apache-2.0"
 description = "Core 3D Gaussian Splatting engine for macOS (Metal / wgpu, GLOMAP SfM, SPZ compression)"
 
 [dependencies]
+flate2 = "1.0"
