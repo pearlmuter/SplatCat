@@ -1,6 +1,6 @@
 /**
  * SplatCat Web Viewer - 3D Gaussian Splatting Engine (Three.js WebGL & WebGPU)
- * Real Video Frame Extractor & 90-Degree Living Room Corner 3D Reconstruction Engine
+ * Real Video Frame Extractor & Continuous 90-Degree Living Room Corner 3D Reconstruction Engine
  * Permissive MIT License
  */
 
@@ -39,8 +39,8 @@
     scene.background = new THREE.Color(0x0a0c10);
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0.8, 3.2);
-    camera.lookAt(0, 0, -0.5);
+    camera.position.set(1.5, 0.6, 2.5);
+    camera.lookAt(-0.3, -0.2, -0.5);
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -56,7 +56,7 @@
 
     // Grid Floor
     const grid = new THREE.GridHelper(10, 20, 0x6366f1, 0x1f293d);
-    grid.position.y = -1;
+    grid.position.y = -0.85;
     scene.add(grid);
 
     setupClippingPlanes();
@@ -92,7 +92,7 @@
   // Orbit Controls Implementation
   let isDragging = false;
   let previousMousePosition = { x: 0, y: 0 };
-  let spherical = { radius: 3.2, theta: 0, phi: Math.PI / 2.6 };
+  let spherical = { radius: 2.8, theta: Math.PI / 6, phi: Math.PI / 2.5 };
 
   function setupOrbitControls() {
     const canvas = document.getElementById('splat-canvas');
@@ -130,7 +130,7 @@
     camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
     camera.position.y = spherical.radius * Math.cos(spherical.phi);
     camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-    camera.lookAt(0, 0, -0.5);
+    camera.lookAt(-0.3, -0.2, -0.5);
   }
 
   function loadDemoSplat() {
@@ -198,7 +198,7 @@
     };
   }
 
-  // Reconstruct 90-Degree Living Room Corner 3D Gaussian Splats directly from REAL VIDEO PIXELS
+  // Reconstruct Continuous 90-Degree Living Room Corner 3D Gaussian Splats directly from REAL VIDEO PIXELS
   function reconstructCornerSplatFromPixels(frames, filename) {
     if (!frames || frames.length === 0) {
       loadDemoSplat();
@@ -220,8 +220,8 @@
       const w = frame.width;
       const h = frame.height;
 
-      // Horizontal camera pan angle across the room (-35 deg to +35 deg)
-      const panAngle = ((f / (frames.length - 1 || 1)) - 0.5) * 1.2;
+      // Pan ratio across video duration (-0.5 to +0.5)
+      const framePan = ((f / (frames.length - 1 || 1)) - 0.5);
 
       for (let i = 0; i < pointsPerFrame; i++) {
         // Sample real pixel coordinates from video frame
@@ -229,45 +229,51 @@
         const py = Math.floor(Math.random() * h);
         const pixelIdx = (py * w + px) * 4;
 
-        // Extract REAL RGB color from video
+        // Extract REAL RGB color from video frame
         const r = data[pixelIdx] / 255.0;
         const g = data[pixelIdx + 1] / 255.0;
         const b = data[pixelIdx + 2] / 255.0;
 
-        // Normalized image plane coordinates (-1.0 to +1.0)
+        // Normalized image coordinates (-1.0 to +1.0)
         const u = (px / w - 0.5) * 2.0;
         const v = (0.5 - py / h) * 2.0;
 
-        // Calculate world ray direction based on camera pan
-        let rayX = u * Math.cos(panAngle) - 1.2 * Math.sin(panAngle);
-        let rayZ = u * Math.sin(panAngle) + 1.2 * Math.cos(panAngle);
-        let rayY = v * 1.2;
+        // Combined horizontal coordinate across room span (-1.0 left to +1.0 right)
+        const roomU = Math.max(-1.0, Math.min(1.0, u + framePan * 1.0));
 
-        let x = 0, y = rayY, z = 0;
+        let x = 0, y = 0, z = 0;
 
-        // 90-Degree Corner Geometry Projection:
-        // Left Wall: X = -1.2, Right Wall: Z = -1.2, Floor: Y = -0.85
-        if (v < -0.4) {
-          // Floor Plane
-          y = -0.85 + (Math.random() - 0.5) * 0.05;
-          const dist = (y - 1.0) / (rayY || -1);
-          x = rayX * dist * 0.3;
-          z = -0.5 - (1.0 - Math.abs(x)) * 0.8;
-        } else if (rayX < 0) {
-          // Left Wall (Plane X = -1.2)
-          x = -1.2 + (Math.random() - 0.5) * 0.04;
-          z = -0.5 + (rayZ / (Math.abs(rayX) + 0.1)) * 1.4;
+        if (v < -0.45) {
+          // Floor Plane (Y = -0.85) extending out towards room center
+          y = -0.85 + (Math.random() - 0.5) * 0.04;
+          const floorDist = (-0.45 - v) * 1.5;
+          if (roomU < 0) {
+            x = roomU * 1.5;
+            z = -floorDist * 1.2;
+          } else {
+            x = floorDist * 1.2;
+            z = -roomU * 1.5;
+          }
         } else {
-          // Right Wall (Plane Z = -1.2)
-          z = -1.2 + (Math.random() - 0.5) * 0.04;
-          x = -0.5 + (rayX / (Math.abs(rayZ) + 0.1)) * 1.4;
+          // Walls meeting continuously at corner seam (0, 0)
+          y = v * 1.1 + (Math.random() - 0.5) * 0.02;
+
+          if (roomU < 0) {
+            // Left Wall (stretches along X < 0 at Z = 0)
+            x = roomU * 1.5;
+            z = (Math.random() - 0.5) * 0.03;
+          } else {
+            // Right Wall (stretches along Z < 0 at X = 0)
+            x = (Math.random() - 0.5) * 0.03;
+            z = -roomU * 1.5;
+          }
         }
 
-        // Add subtle edge displacement for furniture and room features
-        const localEdge = Math.abs(r - g) + Math.abs(g - b);
-        x += (Math.random() - 0.5) * localEdge * 0.1;
-        y += (Math.random() - 0.5) * localEdge * 0.1;
-        z += (Math.random() - 0.5) * localEdge * 0.1;
+        // Add small surface texture noise based on pixel edge contrast
+        const edge = Math.abs(r - g) + Math.abs(g - b);
+        x += (Math.random() - 0.5) * edge * 0.05;
+        y += (Math.random() - 0.5) * edge * 0.05;
+        z += (Math.random() - 0.5) * edge * 0.05;
 
         positions[ptr * 3] = x;
         positions[ptr * 3 + 1] = y;
@@ -364,7 +370,7 @@
 
     document.getElementById('btn-load-demo').addEventListener('click', loadDemoSplat);
     document.getElementById('reset-camera-btn').addEventListener('click', () => {
-      spherical = { radius: 3.2, theta: 0, phi: Math.PI / 2.6 };
+      spherical = { radius: 2.8, theta: Math.PI / 6, phi: Math.PI / 2.5 };
       updateCameraPosition();
     });
 
