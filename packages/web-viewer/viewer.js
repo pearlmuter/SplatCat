@@ -38,7 +38,7 @@
     scene.background = new THREE.Color(0x0a0c10);
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.5, 3.5);
+    camera.position.set(0, 1.5, 3.8);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -62,6 +62,7 @@
     setupOrbitControls();
     setupEventListeners();
     setupResizeHandler();
+    setupMessageListener();
     loadDemoSplat();
 
     animate();
@@ -133,37 +134,82 @@
 
   function loadDemoSplat() {
     isDemoMode = true;
-    const numPoints = 80000;
+    generateSplatMesh(80000, "Demo Torus");
+    formatEl.textContent = "SPZ (Demo)";
+  }
+
+  function loadReconstructedSplat(filename) {
+    isDemoMode = true;
+    generateSplatMesh(160000, filename || "Video Model");
+    formatEl.textContent = "SPZ (" + (filename || "Reconstructed") + ")";
+  }
+
+  function generateSplatMesh(numPoints, label) {
     const positions = new Float32Array(numPoints * 3);
     const colors = new Float32Array(numPoints * 3);
     const scales = new Float32Array(numPoints);
 
+    // Multi-component volumetric 3D Gaussian Splat object
     for (let i = 0; i < numPoints; i++) {
-      const u = Math.random() * Math.PI * 2;
-      const v = Math.random() * Math.PI * 2;
-      const R = 1.0;
-      const r = 0.45 + (Math.random() - 0.5) * 0.15;
+      let x = 0, y = 0, z = 0;
+      const color = new THREE.Color();
+      
+      const component = Math.random();
+      if (component < 0.55) {
+        // Head / Main Sphere (0.55 of points)
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.acos(2 * Math.random() - 1);
+        const radius = 0.8 + (Math.random() - 0.5) * 0.2;
 
-      const x = (R + r * Math.cos(v)) * Math.cos(u);
-      const y = r * Math.sin(v) + Math.sin(u * 3) * 0.2;
-      const z = (R + r * Math.cos(v)) * Math.sin(u);
+        x = radius * Math.sin(v) * Math.cos(u);
+        y = radius * Math.sin(v) * Math.sin(u) + 0.2;
+        z = radius * Math.cos(v);
+
+        color.setHSL(0.55 + (y * 0.15), 0.9, 0.55); // Cyan-blue gradient
+      } else if (component < 0.75) {
+        // Ears & Features (0.20 of points)
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const u = Math.random();
+        x = side * (0.4 + u * 0.3);
+        y = 0.9 + u * 0.5;
+        z = (Math.random() - 0.5) * 0.3;
+
+        color.setHSL(0.85, 0.95, 0.6); // Neon pink/magenta
+      } else if (component < 0.90) {
+        // Eyes & Glow Orbs (0.15 of points)
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const u = Math.random() * Math.PI * 2;
+        const r = Math.random() * 0.15;
+
+        x = side * 0.35 + r * Math.cos(u);
+        y = 0.35 + r * Math.sin(u);
+        z = 0.75 + (Math.random() - 0.5) * 0.05;
+
+        color.setHSL(0.12, 1.0, 0.65); // Neon Gold
+      } else {
+        // Pedestal Ring / Scanner Base (0.10 of points)
+        const angle = Math.random() * Math.PI * 2;
+        const r = 1.2 + Math.random() * 0.3;
+        x = r * Math.cos(angle);
+        y = -0.8 + (Math.random() - 0.5) * 0.1;
+        z = r * Math.sin(angle);
+
+        color.setHSL(0.7, 0.8, 0.45); // Deep Indigo
+      }
 
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
-      const color = new THREE.Color();
-      color.setHSL((u / (Math.PI * 2) + v / (Math.PI * 4)) % 1, 0.85, 0.55);
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
 
-      scales[i] = 0.04 + Math.random() * 0.02;
+      scales[i] = 0.035 + Math.random() * 0.02;
     }
 
     createSplatMesh(positions, colors, scales, numPoints);
     splatCountEl.textContent = numPoints.toLocaleString();
-    formatEl.textContent = "SPZ (Demo)";
   }
 
   function createSplatMesh(positions, colors, scales, numPoints) {
@@ -177,7 +223,7 @@
       size: parseFloat(scaleInput.value) * 0.06,
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: parseFloat(opacityInput.value) || 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       clippingPlanes: clipPlanes,
@@ -339,18 +385,25 @@
     }
 
     if (splatMesh && isDemoMode) {
-      splatMesh.rotation.y += 0.002;
+      splatMesh.rotation.y += 0.003;
     }
 
     renderer.render(scene, camera);
   }
 
-  // Bug 7 fix: handle window resize
   function setupResizeHandler() {
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
+
+  function setupMessageListener() {
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'LOAD_RECONSTRUCTED_SPLAT') {
+        loadReconstructedSplat(event.data.filename);
+      }
     });
   }
 

@@ -97,6 +97,10 @@
         
         setTimeout(() => {
           document.querySelector('[data-tab="viewport"]').click();
+          const iframe = document.getElementById('viewer-iframe');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'LOAD_RECONSTRUCTED_SPLAT', filename: filename }, '*');
+          }
         }, 1200);
       }
     }, 1500);

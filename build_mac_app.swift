@@ -59,7 +59,7 @@ class LiveWebSocketServer {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScriptMessageHandler {
     var window: NSWindow!
     var webView: WKWebView!
     let wsServer = LiveWebSocketServer()
@@ -87,6 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        config.userContentController.add(self, name: "processVideo")
         
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
@@ -111,6 +112,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
             }
         }
         wsServer.start(port: 8765)
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "processVideo",
+           let body = message.body as? [String: Any],
+           let videoPath = body["path"] as? String {
+            extractVideoFrames(videoPath: videoPath)
+        }
+    }
+
+    private func extractVideoFrames(videoPath: String) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/ffmpeg")
+        let outputDir = "/tmp/splatcat_keyframes"
+        try? FileManager.default.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
+        task.arguments = ["-i", videoPath, "-vf", "fps=2", "\(outputDir)/frame_%04d.jpg", "-y"]
+        try? task.run()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
