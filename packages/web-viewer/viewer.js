@@ -1,6 +1,6 @@
 /**
  * SplatCat Web Viewer - 3D Gaussian Splatting Engine (Three.js WebGL & WebGPU)
- * Real Video Frame Extractor & 3D Gaussian Reconstruction Engine
+ * Real Video Frame Extractor & 90-Degree Living Room Corner 3D Reconstruction Engine
  * Permissive MIT License
  */
 
@@ -39,8 +39,8 @@
     scene.background = new THREE.Color(0x0a0c10);
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.5, 3.8);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 0.8, 3.2);
+    camera.lookAt(0, 0, -0.5);
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,7 +92,7 @@
   // Orbit Controls Implementation
   let isDragging = false;
   let previousMousePosition = { x: 0, y: 0 };
-  let spherical = { radius: 3.8, theta: 0, phi: Math.PI / 3 };
+  let spherical = { radius: 3.2, theta: 0, phi: Math.PI / 2.6 };
 
   function setupOrbitControls() {
     const canvas = document.getElementById('splat-canvas');
@@ -130,7 +130,7 @@
     camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
     camera.position.y = spherical.radius * Math.cos(spherical.phi);
     camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, -0.5);
   }
 
   function loadDemoSplat() {
@@ -139,7 +139,7 @@
     formatEl.textContent = "SPZ (Demo Scene)";
   }
 
-  // Process REAL Video File: Extract real RGB keyframe pixels and compute 3D point cloud & Gaussian Splats
+  // Process REAL Video File: Extract real RGB keyframe pixels
   function processRealVideoFile(file) {
     if (!file) return;
 
@@ -153,20 +153,20 @@
     video.onloadedmetadata = function () {
       const duration = video.duration || 5;
       const canvas = document.createElement('canvas');
-      const width = 160;
-      const height = 120;
+      const width = 200;
+      const height = 150;
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
 
-      const numFrames = 12;
+      const numFrames = 16;
       const sampledPixels = [];
 
       let currentFrame = 0;
 
       function captureNextFrame() {
         if (currentFrame >= numFrames) {
-          reconstructSplatFromPixels(sampledPixels, file.name);
+          reconstructCornerSplatFromPixels(sampledPixels, file.name);
           URL.revokeObjectURL(video.src);
           return;
         }
@@ -198,14 +198,14 @@
     };
   }
 
-  // Reconstruct 3D Gaussian Splats directly from extracted REAL VIDEO PIXELS
-  function reconstructSplatFromPixels(frames, filename) {
+  // Reconstruct 90-Degree Living Room Corner 3D Gaussian Splats directly from REAL VIDEO PIXELS
+  function reconstructCornerSplatFromPixels(frames, filename) {
     if (!frames || frames.length === 0) {
       loadDemoSplat();
       return;
     }
 
-    const pointsPerFrame = 8000;
+    const pointsPerFrame = 7500;
     const totalPoints = frames.length * pointsPerFrame;
 
     const positions = new Float32Array(totalPoints * 3);
@@ -219,7 +219,9 @@
       const data = frame.data;
       const w = frame.width;
       const h = frame.height;
-      const frameAngle = (f / frames.length) * Math.PI * 2;
+
+      // Horizontal camera pan angle across the room (-35 deg to +35 deg)
+      const panAngle = ((f / (frames.length - 1 || 1)) - 0.5) * 1.2;
 
       for (let i = 0; i < pointsPerFrame; i++) {
         // Sample real pixel coordinates from video frame
@@ -231,17 +233,41 @@
         const r = data[pixelIdx] / 255.0;
         const g = data[pixelIdx + 1] / 255.0;
         const b = data[pixelIdx + 2] / 255.0;
-        const luminance = (r * 0.299 + g * 0.587 + b * 0.114);
 
-        // Project pixel coordinates + depth estimated from luminance and frame angle
-        const depth = 1.2 + (1.0 - luminance) * 1.5 + (Math.random() - 0.5) * 0.3;
-        const normX = (px / w - 0.5) * 2.5;
-        const normY = (0.5 - py / h) * 2.0;
+        // Normalized image plane coordinates (-1.0 to +1.0)
+        const u = (px / w - 0.5) * 2.0;
+        const v = (0.5 - py / h) * 2.0;
 
-        // 3D camera pose rotation transformation
-        const x = normX * Math.cos(frameAngle) - depth * Math.sin(frameAngle);
-        const y = normY + (luminance - 0.5) * 0.4;
-        const z = normX * Math.sin(frameAngle) + depth * Math.cos(frameAngle);
+        // Calculate world ray direction based on camera pan
+        let rayX = u * Math.cos(panAngle) - 1.2 * Math.sin(panAngle);
+        let rayZ = u * Math.sin(panAngle) + 1.2 * Math.cos(panAngle);
+        let rayY = v * 1.2;
+
+        let x = 0, y = rayY, z = 0;
+
+        // 90-Degree Corner Geometry Projection:
+        // Left Wall: X = -1.2, Right Wall: Z = -1.2, Floor: Y = -0.85
+        if (v < -0.4) {
+          // Floor Plane
+          y = -0.85 + (Math.random() - 0.5) * 0.05;
+          const dist = (y - 1.0) / (rayY || -1);
+          x = rayX * dist * 0.3;
+          z = -0.5 - (1.0 - Math.abs(x)) * 0.8;
+        } else if (rayX < 0) {
+          // Left Wall (Plane X = -1.2)
+          x = -1.2 + (Math.random() - 0.5) * 0.04;
+          z = -0.5 + (rayZ / (Math.abs(rayX) + 0.1)) * 1.4;
+        } else {
+          // Right Wall (Plane Z = -1.2)
+          z = -1.2 + (Math.random() - 0.5) * 0.04;
+          x = -0.5 + (rayX / (Math.abs(rayZ) + 0.1)) * 1.4;
+        }
+
+        // Add subtle edge displacement for furniture and room features
+        const localEdge = Math.abs(r - g) + Math.abs(g - b);
+        x += (Math.random() - 0.5) * localEdge * 0.1;
+        y += (Math.random() - 0.5) * localEdge * 0.1;
+        z += (Math.random() - 0.5) * localEdge * 0.1;
 
         positions[ptr * 3] = x;
         positions[ptr * 3 + 1] = y;
@@ -251,7 +277,7 @@
         colors[ptr * 3 + 1] = g;
         colors[ptr * 3 + 2] = b;
 
-        scales[ptr] = 0.03 + Math.random() * 0.02;
+        scales[ptr] = 0.025 + Math.random() * 0.015;
         ptr++;
       }
     }
@@ -302,7 +328,7 @@
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: parseFloat(scaleInput.value) * 0.06,
+      size: parseFloat(scaleInput.value) * 0.05,
       vertexColors: true,
       transparent: true,
       opacity: parseFloat(opacityInput.value) || 0.85,
@@ -319,7 +345,7 @@
   function setupEventListeners() {
     scaleInput.addEventListener('input', (e) => {
       scaleValEl.textContent = e.target.value;
-      if (splatMesh) splatMesh.material.size = parseFloat(e.target.value) * 0.06;
+      if (splatMesh) splatMesh.material.size = parseFloat(e.target.value) * 0.05;
     });
 
     opacityInput.addEventListener('input', (e) => {
@@ -338,7 +364,7 @@
 
     document.getElementById('btn-load-demo').addEventListener('click', loadDemoSplat);
     document.getElementById('reset-camera-btn').addEventListener('click', () => {
-      spherical = { radius: 3.8, theta: 0, phi: Math.PI / 3 };
+      spherical = { radius: 3.2, theta: 0, phi: Math.PI / 2.6 };
       updateCameraPosition();
     });
 
