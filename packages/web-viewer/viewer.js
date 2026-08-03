@@ -258,12 +258,12 @@
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: parseFloat(scaleInput.value) * 0.05,
+      size: parseFloat(scaleInput.value) * 0.015,
       vertexColors: true,
       transparent: true,
       opacity: parseFloat(opacityInput.value) || 0.85,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+      blending: THREE.NormalBlending,
+      depthWrite: true,
       clippingPlanes: clipPlanes,
       clipShadows: true
     });
