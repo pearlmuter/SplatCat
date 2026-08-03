@@ -11,6 +11,8 @@ struct SplatCatCompanionApp: App {
 
 struct ContentView: View {
     @StateObject private var streamer = StreamerService()
+    @State private var isEditingIP = false
+    @State private var ipInputText = ""
     
     var body: some View {
         ZStack {
@@ -20,6 +22,7 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.all)
             
             VStack {
+                // Header Bar
                 HStack {
                     HStack(spacing: 8) {
                         Image(uiImage: UIImage(named: "AppIcon") ?? UIImage())
@@ -37,28 +40,48 @@ struct ContentView: View {
                     
                     Spacer()
                     
-                    Text(streamer.isConnected ? "🟢 Connected" : "🔴 Offline")
-                        .font(.caption)
-                        .bold()
+                    Button(action: {
+                        ipInputText = streamer.rawAddress
+                        isEditingIP = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Text(streamer.isConnected ? "🟢 Connected" : "🔴 Offline")
+                                .font(.caption)
+                                .bold()
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.caption)
+                        }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Color.black.opacity(0.75))
                         .cornerRadius(12)
                         .foregroundColor(streamer.isConnected ? .green : .red)
+                    }
                 }
                 .padding()
                 
                 Spacer()
                 
+                // Bottom Control Card
                 VStack(spacing: 12) {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Mac Server")
+                            Text("Mac Server IP")
                                 .font(.caption2)
                                 .foregroundColor(.gray)
-                            Text(streamer.hostAddress)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundColor(.cyan)
+                            Button(action: {
+                                ipInputText = streamer.rawAddress
+                                isEditingIP = true
+                            }) {
+                                HStack(spacing: 4) {
+                                    Text(streamer.hostAddress)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .foregroundColor(.cyan)
+                                    Image(systemName: "pencil")
+                                        .font(.caption2)
+                                        .foregroundColor(.cyan)
+                                }
+                            }
                         }
                         Spacer()
                         VStack(alignment: .trailing) {
@@ -92,6 +115,17 @@ struct ContentView: View {
                 .cornerRadius(20)
                 .padding()
             }
+        }
+        .alert("Connect to Mac Desktop App", isPresented: $isEditingIP) {
+            TextField("Mac LAN IP (e.g. 10.0.0.4)", text: $ipInputText)
+                .keyboardType(.numbersAndPunctuation)
+                .autocapitalization(.none)
+            Button("Save & Connect") {
+                streamer.updateHostAddress(ipInputText)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enter your Mac's LAN IP address. Make sure SplatCat Desktop is open on your Mac.")
         }
     }
 }

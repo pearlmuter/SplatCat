@@ -7,13 +7,47 @@ class StreamerService: ObservableObject {
     @Published var isConnected = false
     @Published var isStreaming = false
     @Published var sentFrameCount = 0
-    @Published var hostAddress = "ws://10.0.0.4:8765"
+    @Published var hostAddress: String
+    @Published var rawAddress: String
     
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession?
     private var pingTimer: Timer?
     
-    init() {}
+    init() {
+        let savedIP = UserDefaults.standard.string(forKey: "SplatCat_Mac_IP") ?? "10.0.0.4"
+        self.rawAddress = savedIP
+        self.hostAddress = StreamerService.formatWebSocketURL(savedIP)
+    }
+    
+    static func formatWebSocketURL(_ input: String) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "ws://10.0.0.4:8765"
+        }
+        if trimmed.starts(with: "ws://") || trimmed.starts(with: "wss://") {
+            return trimmed
+        }
+        if trimmed.contains(":") {
+            return "ws://\(trimmed)"
+        }
+        return "ws://\(trimmed):8765"
+    }
+    
+    func updateHostAddress(_ newAddress: String) {
+        let sanitized = newAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sanitized.isEmpty {
+            rawAddress = sanitized
+            hostAddress = StreamerService.formatWebSocketURL(sanitized)
+            UserDefaults.standard.set(sanitized, forKey: "SplatCat_Mac_IP")
+            
+            // Reconnect if currently streaming or testing
+            if isStreaming {
+                stopStreaming()
+                startStreaming()
+            }
+        }
+    }
     
     func toggleStreaming() {
         if isStreaming {
@@ -23,7 +57,7 @@ class StreamerService: ObservableObject {
         }
     }
     
-    private func startStreaming() {
+    func startStreaming() {
         guard let url = URL(string: hostAddress) else {
             print("[StreamerService] Invalid host URL: \(hostAddress)")
             return
@@ -40,10 +74,9 @@ class StreamerService: ObservableObject {
         // Start the receive loop so we can detect disconnection
         receiveLoop()
         
-        // Ping every 5 seconds to check liveness
         DispatchQueue.main.async { [weak self] in
             self?.isStreaming = true
-            self?.pingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.pingTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
                 self?.sendPing()
             }
         }
@@ -70,7 +103,7 @@ class StreamerService: ObservableObject {
         }
     }
     
-    private func stopStreaming() {
+    func stopStreaming() {
         pingTimer?.invalidate()
         pingTimer = nil
         webSocketTask?.cancel(with: .goingAway, reason: nil)
