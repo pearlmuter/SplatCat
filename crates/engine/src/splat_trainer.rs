@@ -16,7 +16,7 @@ impl SplatTrainer {
     }
 
     /// Run Brush 3DGS differentiable Gaussian rasterizer training loop
-    /// and export a binary 3D Gaussian Splat PLY model.
+    /// and export a 3D Gaussian Splat PLY model with standard normalized SH colors.
     pub fn train_splat<F>(
         &self,
         sfm: &SfMResult,
@@ -34,6 +34,7 @@ impl SplatTrainer {
 
         let output_ply = output_dir.join("model_trained.ply");
         let total_splats = 80000;
+        let c0 = 0.28209479177387814f32; // 0.5 / sqrt(pi)
 
         for iter in (100..=self.max_iterations).step_by(100) {
             let progress_pct = (iter as f32 / self.max_iterations as f32) * 100.0;
@@ -49,7 +50,7 @@ impl SplatTrainer {
             });
         }
 
-        // Write a valid 3D Gaussian Splatting PLY file
+        // Write standard 3DGS PLY format file with normalized SH attributes
         let mut ply_content = String::new();
         ply_content.push_str(&format!(
             "ply\n\
@@ -81,25 +82,25 @@ impl SplatTrainer {
             let v = (i as f64) * 0.002;
             let radius = 1.0 + 0.2 * (u * 3.0).sin();
 
-            let x = radius * u.cos() * v.sin();
-            let y = radius * v.cos();
-            let z = radius * u.sin() * v.sin();
+            let x = (radius * u.cos() * v.sin()) as f32;
+            let y = (radius * v.cos()) as f32;
+            let z = (radius * u.sin() * v.sin()) as f32;
 
-            let f_dc_0 = ((u.sin() * 0.5 + 0.5) * 255.0) as f32;
-            let f_dc_1 = ((v.cos() * 0.5 + 0.5) * 255.0) as f32;
-            let f_dc_2 = 220.0f32;
-            let opacity = 0.85f32;
-            let scale_0 = 0.03f32;
-            let scale_1 = 0.03f32;
-            let scale_2 = 0.03f32;
+            // Normalized SH 0th-order coefficients: (RGB_color - 0.5) / C0
+            let r_norm = ((u.sin() * 0.5 + 0.5) as f32 - 0.5) / c0;
+            let g_norm = ((v.cos() * 0.5 + 0.5) as f32 - 0.5) / c0;
+            let b_norm = (0.85f32 - 0.5) / c0;
+
+            let log_opacity = 2.0f32; // logit(0.88)
+            let log_scale = -3.5f32;  // exp(-3.5) = 0.03
             let rot_0 = 1.0f32;
             let rot_1 = 0.0f32;
             let rot_2 = 0.0f32;
             let rot_3 = 0.0f32;
 
             ply_content.push_str(&format!(
-                "{:.4} {:.4} {:.4} 0 0 0 {:.2} {:.2} {:.2} {:.2} {:.4} {:.4} {:.4} {:.2} {:.2} {:.2} {:.2}\n",
-                x, y, z, f_dc_0, f_dc_1, f_dc_2, opacity, scale_0, scale_1, scale_2, rot_0, rot_1, rot_2, rot_3
+                "{:.4} {:.4} {:.4} 0 0 0 {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} {:.4} {:.4}\n",
+                x, y, z, r_norm, g_norm, b_norm, log_opacity, log_scale, log_scale, log_scale, rot_0, rot_1, rot_2, rot_3
             ));
         }
 
