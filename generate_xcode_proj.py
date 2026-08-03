@@ -21,7 +21,7 @@ def create_xcode_project():
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0001 /* SplatCatCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SplatCatCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0001 /* SplatCat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SplatCat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2001 /* SplatCatCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCatCompanionApp.swift; sourceTree = "<group>"; };
 		2002 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		2003 /* HeatmapShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = HeatmapShader.metal; sourceTree = "<group>"; };
@@ -59,16 +59,16 @@ def create_xcode_project():
 				2003 /* HeatmapShader.metal */,
 				2004 /* StreamerService.swift */,
 				2005 /* Assets.xcassets */,
-				0001 /* SplatCatCompanion.app */,
+				0001 /* SplatCat.app */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5001 /* SplatCatCompanion */ = {
+		5001 /* SplatCat */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6001 /* Build configuration list for PBXNativeTarget "SplatCatCompanion" */;
+			buildConfigurationList = 6001 /* Build configuration list for PBXNativeTarget "SplatCat" */;
 			buildPhases = (
 				7001 /* Sources */,
 				3001 /* Frameworks */,
@@ -78,9 +78,9 @@ def create_xcode_project():
 			);
 			dependencies = (
 			);
-			name = SplatCatCompanion;
-			productName = SplatCatCompanion;
-			productReference = 0001 /* SplatCatCompanion.app */;
+			name = SplatCat;
+			productName = SplatCat;
+			productReference = 0001 /* SplatCat.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@ def create_xcode_project():
 					};
 				};
 			};
-			buildConfigurationList = 6002 /* Build configuration list for PBXProject "SplatCatCompanion" */;
+			buildConfigurationList = 6002 /* Build configuration list for PBXProject "SplatCat" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -111,7 +111,7 @@ def create_xcode_project():
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5001 /* SplatCatCompanion */,
+				5001 /* SplatCat */,
 			);
 		};
 /* End PBXProject section */
@@ -140,6 +140,7 @@ def create_xcode_project():
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SplatCat;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SplatCat requires camera access for 3D scanning";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -149,8 +150,8 @@ def create_xcode_project():
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.splatcat.companion;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.splatcat.SplatCatCompanion";
+				PRODUCT_NAME = SplatCat;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_TARGETS = YES;
 				SWIFT_VERSION = 5.0;
@@ -167,6 +168,7 @@ def create_xcode_project():
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SplatCat;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SplatCat requires camera access for 3D scanning";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -176,8 +178,8 @@ def create_xcode_project():
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.splatcat.companion;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.splatcat.SplatCatCompanion";
+				PRODUCT_NAME = SplatCat;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_TARGETS = YES;
 				SWIFT_VERSION = 5.0;
@@ -188,7 +190,7 @@ def create_xcode_project():
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		6001 /* Build configuration list for PBXNativeTarget "SplatCatCompanion" */ = {
+		6001 /* Build configuration list for PBXNativeTarget "SplatCat" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9001 /* Debug */,
@@ -197,7 +199,7 @@ def create_xcode_project():
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6002 /* Build configuration list for PBXProject "SplatCatCompanion" */ = {
+		6002 /* Build configuration list for PBXProject "SplatCat" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9001 /* Debug */,
@@ -213,7 +215,7 @@ def create_xcode_project():
 """
     with open(os.path.join(proj_dir, "project.pbxproj"), "w") as f:
         f.write(pbxproj_content)
-    print(f"Successfully regenerated {proj_dir}")
+    print(f"Successfully regenerated {proj_dir} with app name SplatCat")
 
 if __name__ == "__main__":
     create_xcode_project()
