@@ -53,8 +53,12 @@ body, html {
   border-bottom: 1px solid var(--border-card);
 }
 
-.logo {
-  font-size: 28px;
+.logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
 }
 
 .title {

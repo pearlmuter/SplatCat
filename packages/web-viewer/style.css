@@ -67,9 +67,12 @@ body, html {
   gap: 12px;
 }
 
-.logo-icon {
-  font-size: 24px;
-  filter: drop-shadow(0 0 8px var(--highlight));
+.logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
 .brand-name {

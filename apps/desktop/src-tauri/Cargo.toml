@@ -6,5 +6,11 @@ authors = ["Antigravity Team"]
 license = "Apache-2.0"
 edition = "2021"
 
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
 [dependencies]
 splatcat-engine = { path = "../../../crates/engine" }
+tauri = { version = "2.0", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
