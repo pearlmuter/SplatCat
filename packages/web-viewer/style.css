@@ -103,37 +103,45 @@ body, html {
 
 .btn {
   font-family: var(--font-main);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 0px !important;
+  border: 2px solid #14171c;
+  background: #fdd100;
+  color: #14171c;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0px #000000;
+  transition: transform 0.05s ease, box-shadow 0.05s ease, background-color 0.1s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn:hover {
+  background: #fee155;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-  color: #ffffff;
-  box-shadow: 0 0 16px var(--accent-glow);
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 24px var(--accent-glow);
+  background: #fdd100;
+  color: #14171c;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main);
-  border: 1px solid var(--panel-border);
+  background: #38bdf8;
+  color: #14171c;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: #7dd3fc;
 }
 
 .btn-full {

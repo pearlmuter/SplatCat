@@ -198,8 +198,16 @@ def train_3dgs_metal(colmap_dir, images_dir, output_ply, iterations=3000):
             loss.backward()
             optimizer.step()
 
-            if step % 500 == 0 or step == iterations:
+            if step % 300 == 0 or step == iterations:
                 print(f"[3DGS Metal] Iteration {step}/{iterations} - Loss: {loss.item():.6f}")
+                # Save intermediate checkpoint for live 3D viewport streaming
+                chk_xyz = tensor_xyz.detach().cpu().numpy()
+                chk_sh = tensor_sh.detach().cpu().numpy()
+                chk_op = tensor_opacity.detach().cpu().numpy()
+                chk_sc = tensor_scale.detach().cpu().numpy()
+                chk_rot = tensor_rot.detach().cpu().numpy()
+                write_3dgs_ply(output_ply, chk_xyz, chk_sh, chk_op, chk_sc, chk_rot)
+                print(f"[3DGS Metal] Saved intermediate checkpoint PLY at step {step} to {output_ply}")
 
         xyz = tensor_xyz.detach().cpu().numpy()
         sh_dc = tensor_sh.detach().cpu().numpy()

@@ -98,6 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
         config.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
         config.userContentController.add(self, name: "processVideo")
         config.userContentController.add(self, name: "openFilePicker")
+        config.userContentController.add(self, name: "togglePauseProcess")
         
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
@@ -124,6 +125,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
         }
         wsServer.start(port: 8765)
     }
+
+    var activeSubprocessPID: Int32 = -1
+    var isProcessPaused: Bool = false
 
     // Handle WKWebView file upload dialogs (NSOpenPanel)
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
@@ -165,6 +169,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
            let videoPath = body["path"] as? String {
             let videoName = (body["name"] as? String) ?? (videoPath as NSString).lastPathComponent
             runFull3DGSPipeline(videoPath: videoPath, videoName: videoName)
+        } else if message.name == "togglePauseProcess" {
+            if activeSubprocessPID > 0 {
+                if isProcessPaused {
+                    kill(activeSubprocessPID, SIGCONT)
+                    isProcessPaused = false
+                    let js = "if (window.splatcatOnPauseStateChanged) window.splatcatOnPauseStateChanged(false);"
+                    webView.evaluateJavaScript(js, completionHandler: nil)
+                } else {
+                    kill(activeSubprocessPID, SIGSTOP)
+                    isProcessPaused = true
+                    let js = "if (window.splatcatOnPauseStateChanged) window.splatcatOnPauseStateChanged(true);"
+                    webView.evaluateJavaScript(js, completionHandler: nil)
+                }
+            }
         }
     }
 
@@ -230,7 +248,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
 
                 do {
                     try process.run()
+                    self?.activeSubprocessPID = process.processIdentifier
                     process.waitUntilExit()
+                    self?.activeSubprocessPID = -1
                     outHandle.readabilityHandler = nil
                     errHandle.readabilityHandler = nil
                     logConsole(process.terminationStatus == 0 ? "INFO" : "ERROR", "\(description) exited with code \(process.terminationStatus)")

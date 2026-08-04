@@ -65,6 +65,31 @@
     const btnSelectVideo = document.getElementById('btn-select-video');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     const btnCopyLogs = document.getElementById('btn-copy-logs');
+    const btnPauseWork = document.getElementById('btn-pause-work');
+
+    if (btnPauseWork) {
+      btnPauseWork.addEventListener('click', () => {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.togglePauseProcess) {
+          window.webkit.messageHandlers.togglePauseProcess.postMessage({});
+        } else {
+          window.splatcatLog('INFO', 'Pause/Resume is available during active desktop pipeline runs.');
+        }
+      });
+    }
+
+    window.splatcatOnPauseStateChanged = function (isPaused) {
+      if (btnPauseWork) {
+        if (isPaused) {
+          btnPauseWork.textContent = '▶️ Resume Work';
+          btnPauseWork.style.background = '#38bdf8';
+          window.splatcatLog('INFO', '⏸️ Process PAUSED to free CPU/GPU capacity for other work.');
+        } else {
+          btnPauseWork.textContent = '⏸️ Pause Work';
+          btnPauseWork.style.background = '#fdd100';
+          window.splatcatLog('INFO', '▶️ Process RESUMED. Continuing 3D reconstruction...');
+        }
+      }
+    };
 
     if (btnCopyLogs) {
       btnCopyLogs.addEventListener('click', () => {
