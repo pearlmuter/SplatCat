@@ -44,3 +44,9 @@ fn test_glomap_pose_solver_instantiation() {
     let solver = GlomapPoseSolver::new(None);
     assert!(solver.binary_path.is_none());
 }
+
+#[test]
+fn test_colmap_runner_instantiation() {
+    let runner = splatcat_engine::ColmapRunner::new();
+    assert!(runner.colmap_binary.to_str().unwrap().contains("colmap"));
+}

@@ -68,7 +68,7 @@
           </div>
         </div>
 
-        <!-- Processing Timeline Bar -->
+        <!-- Processing Timeline & Diagnostic Console Drawer -->
         <div class="card timeline-card hidden" id="processing-card">
           <div class="card-header">
             <h3>3D Reconstruction Pipeline Progress</h3>
@@ -86,16 +86,30 @@
             </div>
             <div class="step" id="step-glomap">
               <div class="step-num">2</div>
-              <div class="step-label">GLOMAP SfM Poses</div>
+              <div class="step-label">COLMAP SfM Poses</div>
             </div>
             <div class="step" id="step-brush">
               <div class="step-num">3</div>
-              <div class="step-label">Brush 3DGS Training</div>
+              <div class="step-label">Metal 3DGS Training</div>
             </div>
             <div class="step" id="step-spz">
               <div class="step-num">4</div>
-              <div class="step-label">SPZ Compression</div>
+              <div class="step-label">3DGS PLY Output</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Live Diagnostic Terminal Drawer -->
+        <div class="card diagnostic-card">
+          <div class="card-header">
+            <h3>💻 Engine Diagnostic Console & Terminal Logs</h3>
+            <div class="btn-group" style="display: flex; gap: 8px;">
+              <button class="btn btn-small btn-primary" id="btn-copy-logs">📋 Copy Logs</button>
+              <button class="btn btn-small" id="btn-clear-logs">Clear Logs</button>
+            </div>
+          </div>
+          <div class="terminal-log-window" id="terminal-log-output">
+            <div class="log-line log-info">[System] SplatCat Diagnostic Console initialized. Waiting for pipeline execution...</div>
           </div>
         </div>
       </section>

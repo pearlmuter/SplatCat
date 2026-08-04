@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import os
+import tempfile
 import unittest
 import numpy as np
 import torch
+from train_3dgs_metal import write_3dgs_ply, train_3dgs_metal
 
 class TestSplatCatPipeline(unittest.TestCase):
 
@@ -26,23 +28,27 @@ class TestSplatCatPipeline(unittest.TestCase):
         decoded_rgb = np.clip(sh_0 * c0 + 0.5, 0.0, 1.0)
         np.testing.assert_allclose(decoded_rgb, original_rgb, rtol=1e-5, atol=1e-5)
 
-    def test_ply_file_integrity(self):
-        """Verify PLY file header structure and property count."""
-        ply_path = "packages/web-viewer/real_livingroom.ply"
-        self.assertTrue(os.path.exists(ply_path), "real_livingroom.ply must exist in packages/web-viewer/")
-        
-        with open(ply_path, "r") as f:
-            header_lines = []
-            for line in f:
-                line_str = line.strip()
-                header_lines.append(line_str)
-                if line_str == "end_header":
-                    break
-        
-        self.assertIn("ply", header_lines[0])
-        self.assertIn("format ascii 1.0", header_lines[1])
-        vertex_element_found = any("element vertex" in line for line in header_lines)
-        self.assertTrue(vertex_element_found, "PLY header must define 'element vertex'")
+    def test_3dgs_binary_ply_writer(self):
+        """Test writing 3DGS binary PLY format file."""
+        num_gaussians = 100
+        xyz = np.random.randn(num_gaussians, 3).astype(np.float32)
+        sh_dc = np.random.randn(num_gaussians, 3).astype(np.float32)
+        opacities = np.ones((num_gaussians, 1), dtype=np.float32)
+        scales = np.zeros((num_gaussians, 3), dtype=np.float32)
+        quaternions = np.tile([1.0, 0.0, 0.0, 0.0], (num_gaussians, 1)).astype(np.float32)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ply_path = os.path.join(tmpdir, "test_model.ply")
+            write_3dgs_ply(ply_path, xyz, sh_dc, opacities, scales, quaternions)
+
+            self.assertTrue(os.path.exists(ply_path), "PLY output file must be created")
+            self.assertGreater(os.path.getsize(ply_path), 500, "PLY file must contain valid header and binary data")
+
+            with open(ply_path, "rb") as f:
+                header = f.read(500).decode("ascii", errors="ignore")
+                self.assertIn("element vertex 100", header)
+                self.assertIn("property float f_dc_0", header)
+                self.assertIn("property float rot_3", header)
 
 if __name__ == "__main__":
     unittest.main()

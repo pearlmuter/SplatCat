@@ -79,6 +79,24 @@
         </select>
       </div>
 
+      <div class="panel-section-title">Model Orientation & Crop</div>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button id="flip-upright-btn" class="btn btn-secondary btn-full">🔄 Flip 180° Upright</button>
+      </div>
+
+      <div class="control-group">
+        <label>Rotate X (<span id="rot-x-val">0°</span>)</label>
+        <input type="range" id="rot-x" min="-180" max="180" value="0" step="5">
+      </div>
+      <div class="control-group">
+        <label>Rotate Y (<span id="rot-y-val">0°</span>)</label>
+        <input type="range" id="rot-y" min="-180" max="180" value="0" step="5">
+      </div>
+      <div class="control-group">
+        <label>Rotate Z (<span id="rot-z-val">0°</span>)</label>
+        <input type="range" id="rot-z" min="-180" max="180" value="0" step="5">
+      </div>
+
       <div class="panel-section-title">Crop Box</div>
       <div class="control-group dual-range">
         <label>X-Crop</label>
@@ -102,7 +120,20 @@
         </div>
       </div>
 
+      <button id="trim-crop-btn" class="btn btn-primary btn-full" style="margin-top: 6px;">✂️ Trim & Crop Model</button>
       <button id="reset-camera-btn" class="btn btn-secondary btn-full">🎥 Reset Camera</button>
+    </div>
+
+    <!-- 3D Navigation ViewCube Gizmo -->
+    <div id="viewcube-container" class="glass-card viewcube-card">
+      <div id="viewcube" class="cube">
+        <div class="cube-face face-front" data-axis="front">FRONT</div>
+        <div class="cube-face face-back" data-axis="back">BACK</div>
+        <div class="cube-face face-left" data-axis="left">LEFT</div>
+        <div class="cube-face face-right" data-axis="right">RIGHT</div>
+        <div class="cube-face face-top" data-axis="top">TOP</div>
+        <div class="cube-face face-bottom" data-axis="bottom">BOTTOM</div>
+      </div>
     </div>
 
     <!-- Drop Zone Overlay -->

@@ -43,12 +43,59 @@
 
   let activeVideoFile = null;
 
+  // Diagnostic Logger Console
+  window.splatcatLog = function (level, message) {
+    const term = document.getElementById('terminal-log-output');
+    if (!term) return;
+    const time = new Date().toLocaleTimeString();
+    const lvl = (level || 'INFO').toLowerCase();
+    const line = document.createElement('div');
+    line.className = `log-line log-${lvl}`;
+    line.textContent = `[${time}] [${level.toUpperCase()}] ${message}`;
+    term.appendChild(line);
+    term.scrollTop = term.scrollHeight;
+  };
+
+  window.splatcatOnNativeFileSelected = function (fullPath) {
+    window.splatcatLog('INFO', `Native file selected: ${fullPath}`);
+    startVideoPipeline(fullPath);
+  };
+
   function setupVideoUpload() {
     const btnSelectVideo = document.getElementById('btn-select-video');
+    const btnClearLogs = document.getElementById('btn-clear-logs');
+    const btnCopyLogs = document.getElementById('btn-copy-logs');
+
+    if (btnCopyLogs) {
+      btnCopyLogs.addEventListener('click', () => {
+        const term = document.getElementById('terminal-log-output');
+        if (!term) return;
+        const logText = term.innerText;
+        navigator.clipboard.writeText(logText).then(() => {
+          const originalText = btnCopyLogs.textContent;
+          btnCopyLogs.textContent = '✅ Copied!';
+          setTimeout(() => { btnCopyLogs.textContent = originalText; }, 2000);
+        }).catch(err => {
+          console.error("Clipboard copy error:", err);
+        });
+      });
+    }
+
+    if (btnClearLogs) {
+      btnClearLogs.addEventListener('click', () => {
+        const term = document.getElementById('terminal-log-output');
+        if (term) term.innerHTML = '<div class="log-line log-info">[System] Console logs cleared.</div>';
+      });
+    }
+
     if (btnSelectVideo) {
       btnSelectVideo.addEventListener('click', (e) => {
         e.stopPropagation();
-        videoInput.click();
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.openFilePicker) {
+          window.webkit.messageHandlers.openFilePicker.postMessage({});
+        } else {
+          videoInput.click();
+        }
       });
     }
 
@@ -78,48 +125,44 @@
     });
   }
 
-  function startVideoPipeline(filename) {
+  window.splatcatUpdateProgress = function (pct, label, done, base64Ply) {
     processingCard.classList.remove('hidden');
-    progressFill.style.width = '0%';
-    statusText.textContent = `Initializing PyTorch Metal GPU 3DGS Pipeline for "${filename}"...`;
+    progressFill.style.width = `${pct}%`;
+    statusText.textContent = label;
 
-    const allStepIds = ['step-extract', 'step-glomap', 'step-brush', 'step-spz'];
-    allStepIds.forEach(id => document.getElementById(id).classList.remove('step-done'));
+    if (pct >= 25) document.getElementById('step-extract')?.classList.add('step-done');
+    if (pct >= 50) document.getElementById('step-glomap')?.classList.add('step-done');
+    if (pct >= 85) document.getElementById('step-brush')?.classList.add('step-done');
+    if (pct >= 100) document.getElementById('step-spz')?.classList.add('step-done');
 
-    const steps = [
-      { id: 'step-extract', pct: 25, duration: 3000, label: 'Extracting 120 keyframes with FFmpeg & Laplacian sharpness filter...' },
-      { id: 'step-glomap', pct: 50, duration: 5000, label: 'Running GLOMAP / SIFT sub-pixel feature matching & epipolar pose estimation...' },
-      { id: 'step-brush', pct: 85, duration: 8000, label: 'Optimizing 3D Gaussians (PyTorch MPS / Apple Metal GPU)...' },
-      { id: 'step-spz', pct: 100, duration: 2000, label: 'SPZ compression complete! Loading 3D Gaussian Splat model...' },
-    ];
-
-    let currentStep = 0;
-
-    function runNextStep() {
-      if (currentStep < steps.length) {
-        const step = steps[currentStep];
-        progressFill.style.width = `${step.pct}%`;
-        statusText.textContent = step.label;
-        document.getElementById(step.id).classList.add('step-done');
-        currentStep++;
-        setTimeout(runNextStep, step.duration);
-      } else {
-        statusText.textContent = '✨ 3D Gaussian Splat Ready! Opening 3D Viewport...';
-        setTimeout(() => {
-          document.querySelector('[data-tab="viewport"]').click();
-          const iframe = document.getElementById('viewer-iframe');
-          if (iframe && iframe.contentWindow) {
-            if (activeVideoFile) {
-              iframe.contentWindow.postMessage({ type: 'PROCESS_REAL_VIDEO', file: activeVideoFile }, '*');
-            } else {
-              iframe.contentWindow.postMessage({ type: 'LOAD_RECONSTRUCTED_SPLAT', filename: filename }, '*');
-            }
+    if (done) {
+      statusText.textContent = '✨ Real 3D Gaussian Splat Ready! Opening 3D Viewport...';
+      setTimeout(() => {
+        document.querySelector('[data-tab="viewport"]').click();
+        const iframe = document.getElementById('viewer-iframe');
+        if (iframe && iframe.contentWindow) {
+          const plyContent = base64Ply ? atob(base64Ply) : null;
+          if (plyContent) {
+            console.log('[SplatCat App] Sending real trained 3DGS PLY model (' + plyContent.length + ' bytes) to 3D Viewport...');
+            iframe.contentWindow.postMessage({ type: 'LOAD_REAL_PLY_CONTENT', content: plyContent, filename: 'Room Corner' }, '*');
           }
-        }, 1200);
-      }
+        }
+      }, 500);
     }
+  };
 
-    runNextStep();
+  function startVideoPipeline(videoFile) {
+    const filename = typeof videoFile === 'string' ? videoFile : (videoFile.name || 'Video');
+    const filePath = typeof videoFile === 'string' ? videoFile : (videoFile.path || videoFile.name);
+
+    processingCard.classList.remove('hidden');
+    progressFill.style.width = '5%';
+    statusText.textContent = `Starting COLMAP SfM & Metal GPU 3DGS calculation for "${filename}"...`;
+
+    // Trigger native Swift backend execution if inside WKWebView
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.processVideo) {
+      window.webkit.messageHandlers.processVideo.postMessage({ path: filePath, name: filename });
+    }
   }
 
   // Bug 2 & 4 fix: Real WebSocket server for iOS AR companion

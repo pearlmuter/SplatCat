@@ -3,3 +3,8 @@
 /build
 *.lock
 .DS_Store
+*.app
+*.ply
+__pycache__/
+*.pyc
+*.xcuserstate

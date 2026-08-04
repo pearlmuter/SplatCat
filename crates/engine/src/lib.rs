@@ -1,11 +1,13 @@
 pub mod frame_extractor;
 pub mod sfm_glomap;
+pub mod sfm_colmap;
 pub mod splat_trainer;
 pub mod splat_compressor;
 pub mod live_stream_server;
 
 pub use frame_extractor::FrameExtractor;
 pub use sfm_glomap::GlomapPoseSolver;
+pub use sfm_colmap::ColmapRunner;
 pub use splat_trainer::SplatTrainer;
 pub use splat_compressor::SplatCompressor;
 pub use live_stream_server::LiveStreamServer;
