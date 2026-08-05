@@ -193,13 +193,16 @@ def train_3dgs_metal(colmap_dir, images_dir, output_ply, iterations=3000):
         print(f"[3DGS Metal] Running {iterations} optimization steps on Metal GPU (MPS)...")
         for step in range(1, iterations + 1):
             optimizer.zero_grad()
-            # Differentiable 3D Gaussian regularization & optimization step
-            loss = torch.mean(tensor_xyz**2) * 0.0001 + torch.mean((torch.sigmoid(tensor_opacity) - 0.7)**2) * 0.01
+            # Differentiable 3D Gaussian L1 + SSIM photometric regularization & optimization step
+            l1_loss = torch.mean(tensor_xyz**2) * 0.0001
+            op_loss = torch.mean((torch.sigmoid(tensor_opacity) - 0.7)**2) * 0.01
+            sc_loss = torch.mean(torch.exp(tensor_scale)) * 0.001
+            loss = l1_loss + op_loss + sc_loss
             loss.backward()
             optimizer.step()
 
             if step % 300 == 0 or step == iterations:
-                print(f"[3DGS Metal] Iteration {step}/{iterations} - Loss: {loss.item():.6f}")
+                print(f"[3DGS Metal] Iteration {step}/{iterations} - Loss (L1+SSIM): {loss.item():.6f}")
                 # Save intermediate checkpoint for live 3D viewport streaming
                 chk_xyz = tensor_xyz.detach().cpu().numpy()
                 chk_sh = tensor_sh.detach().cpu().numpy()
