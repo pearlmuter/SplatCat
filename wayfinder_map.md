@@ -59,11 +59,14 @@ How should SplatCat reconstruct textureless painted walls, floor planes, and ref
 ## video-capture-and-frame-preprocessing: Video Capture Quality & Pre-Processing Workflows
 
 Blocked by: None
-Status: in-progress
+Status: resolved
 Type: Research
 
 ### Question
 What video capture protocols and automated pre-processing steps (exposure normalization, Laplacian motion blur filtering, AE/AF lock guidelines) will prevent photometric flickers and floaters during 3DGS training?
 
 ### Answer
-*To be resolved in session.*
+**Decision**: Adaptive Relative Pre-Processing & In-App Guidance.
+1. **Adaptive Relative Sharpness Check**: Compares adjacent keyframe Laplacian variance ($\Delta t < 0.5s$) to detect camera whip-pans and operator bumps without accidentally discarding sharp photos of smooth, low-texture walls.
+2. **Exposure Equalization**: Normalizes mean luminance $\bar{I}$ across linear RGB keyframes to eliminate dynamic AE flickering.
+3. **In-App Studio Guidance**: Displays interactive camera capture tips (Blackmagic Camera, AE/AF lock, 80%+ overlap orbital arcs).
