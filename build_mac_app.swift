@@ -313,6 +313,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
                 return
             }
 
+            // Stage 1.5: Adaptive Blur Filtering & Exposure Equalization Pre-Processing
+            let projectDir = "/Users/emil/Documents/Codex/SplatCat"
+            let venvPython = "\(projectDir)/.venv/bin/python"
+            let preScript = "\(projectDir)/preprocess_keyframes.py"
+            updateProgress(pct: 25, label: "Equalizing keyframe exposure & culling motion-blurred whip-pans...")
+            let preCode = runSubprocess(bin: venvPython, args: [preScript, framesDir], description: "Keyframe pre-processing")
+            if preCode != 0 {
+                logConsole("ERROR", "Keyframe pre-processing encountered a non-zero exit code: \(preCode). Continuing with extracted frames.")
+            }
+
             // Stage 2: COLMAP feature_extractor
             updateProgress(pct: 35, label: "Running COLMAP SIFT feature extraction...")
             let featCode = runSubprocess(bin: "/opt/homebrew/bin/colmap", args: ["feature_extractor", "--database_path", dbPath, "--image_path", framesDir, "--ImageReader.camera_model", "SIMPLE_RADIAL", "--ImageReader.single_camera", "1", "--SiftExtraction.max_num_features", "8192"], description: "COLMAP feature extraction")
@@ -356,8 +366,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
 
             // Stage 5: PyTorch Metal GPU 3DGS Trainer
             updateProgress(pct: 90, label: "Optimizing 3D Gaussians on Apple Metal GPU (PyTorch MPS)...")
-            let projectDir = "/Users/emil/Documents/Codex/SplatCat"
-            let venvPython = "\(projectDir)/.venv/bin/python"
             let pyScript = "\(projectDir)/train_3dgs_metal.py"
             _ = runSubprocess(bin: venvPython, args: [pyScript, "--colmap_dir", sparseDir, "--images_dir", framesDir, "--output_ply", outputPlyPath, "--iterations", "3000"], description: "PyTorch Metal 3DGS optimizer")
 
