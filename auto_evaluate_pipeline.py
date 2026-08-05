@@ -5,6 +5,11 @@ Automated Pipeline Self-Evaluator for SplatCat
 Automates running the full video-to-3D Gaussian Splatting pipeline,
 evaluates reconstruction quality, logs analytical diagnostics,
 and verifies point cloud density & camera pose solver success.
+
+Quality evaluation (PRD 0003 T4): the pipeline passes only when the
+produced model's rendered views clear the acceptance bar — measured
+PSNR/SSIM against captured keyframes plus the visual checklist —
+never on point counts alone.
 """
 
 import os
@@ -14,6 +19,119 @@ import subprocess
 import glob
 import math
 import numpy as np
+
+from quality_metrics import compute_psnr, compute_ssim
+
+# Spherical-Harmonics DC color constant, shared with the trainer and viewer
+# contract (train_3dgs_metal.SH_C0). One authoritative value.
+from train_3dgs_metal import SH_C0
+
+# Acceptance bar for the living-room reference scene (PRD 0003).
+# A scene passes when mean rendered-vs-keyframe metrics clear these
+# thresholds AND the visual checklist below is satisfied by inspection.
+ACCEPTANCE_BAR = {
+    "psnr_min": 18.0,
+    "ssim_min": 0.55,
+    "visual_checklist": [
+        "Solid walls and floors, no floating splat cloud",
+        "Colors match the source footage",
+        "No giant flat squares or full-screen artifacts",
+    ],
+}
+
+
+def evaluate_quality(rendered_views, target_keyframes):
+    """Scores rendered views against captured keyframes against the acceptance bar.
+
+    rendered_views / target_keyframes: lists of HWC images (np arrays or tensors).
+    Returns a dict with mean psnr/ssim, per-view metrics, and the pass/fail verdict.
+    """
+    assert len(rendered_views) == len(target_keyframes), \
+        "rendered and target view counts must match"
+    psnrs = [compute_psnr(r, t) for r, t in zip(rendered_views, target_keyframes)]
+    ssims = [float(compute_ssim(r, t)) for r, t in zip(rendered_views, target_keyframes)]
+    if all(np.isinf(p) for p in psnrs):
+        mean_psnr = float("inf")
+    else:
+        finite_psnr = [p for p in psnrs if np.isfinite(p)]
+        mean_psnr = float(np.mean(finite_psnr)) if finite_psnr else 0.0
+    mean_ssim = float(np.mean(ssims))
+    passed = mean_psnr >= ACCEPTANCE_BAR["psnr_min"] and mean_ssim >= ACCEPTANCE_BAR["ssim_min"]
+    return {
+        "psnr": mean_psnr,
+        "ssim": mean_ssim,
+        "per_view": [{"psnr": p, "ssim": s} for p, s in zip(psnrs, ssims)],
+        "bar": dict(ACCEPTANCE_BAR),
+        "passed": passed,
+    }
+
+
+def load_ply_tensors(ply_path):
+    """Loads a trainer-written PLY into render-ready torch tensors.
+
+    Inverse of write_3dgs_ply: log-scales -> exp, SH DC -> sRGB via
+    C0 = 0.28209479177387814, opacities already sigmoid-space.
+    Returns dict(means, colors, opacities, scales, quats).
+    """
+    from train_3dgs_metal import parse_ply_per_viewer_contract
+    import torch
+    parsed = parse_ply_per_viewer_contract(ply_path)
+    means = torch.tensor(parsed["xyz"], dtype=torch.float32)
+    colors = torch.tensor(parsed["rgb"], dtype=torch.float32).clamp(0.0, 1.0)
+    opacities = torch.tensor(parsed["opacity"], dtype=torch.float32).reshape(-1, 1)
+    scales = torch.exp(torch.tensor(parsed["log_scales"], dtype=torch.float32))
+    quats = torch.tensor(parsed["quaternions"], dtype=torch.float32)
+    return {"means": means, "colors": colors, "opacities": opacities,
+            "scales": scales, "quats": quats}
+
+
+def score_trained_model(ply_path, sparse_dir, frames_dir, max_views=6):
+    """Renders the trained PLY at recovered COLMAP poses and scores vs keyframes.
+
+    Returns evaluate_quality() result dict. Renders at most max_views evenly
+    spaced registered views to keep the check fast.
+    """
+    from train_photometric import build_views_from_colmap, load_keyframes
+    from gaussian_renderer import render_gaussians
+    import torch
+
+    views = build_views_from_colmap(sparse_dir, frames_dir)
+    keyframes = load_keyframes(frames_dir)
+    if not views or not keyframes:
+        return {"passed": False, "psnr": 0.0, "ssim": 0.0, "per_view": [],
+                "bar": dict(ACCEPTANCE_BAR), "error": "no views/keyframes"}
+
+    views_ordered = [v for v in views if v["name"] in keyframes]
+    if not views_ordered:
+        return {"passed": False, "psnr": 0.0, "ssim": 0.0, "per_view": [],
+                "bar": dict(ACCEPTANCE_BAR), "error": "no view/keyframe name overlap"}
+    # Evenly spaced views along the camera trajectory (views arrive in
+    # COLMAP registration order), not a name-sorted prefix.
+    step = max(1, len(views_ordered) // max_views)
+    common = views_ordered[::step][:max_views]
+
+    params = load_ply_tensors(ply_path)
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    params = {k: v.to(device) for k, v in params.items()}
+
+    rendered_views, targets = [], []
+    for view in common:
+        name = view["name"]
+        K = torch.tensor(view["K"], dtype=torch.float32, device=device)
+        viewmat = torch.tensor(view["viewmat"], dtype=torch.float32, device=device)
+        h, w = view["height"], view["width"]
+        img, _ = render_gaussians(
+            params["means"], params["quats"], params["scales"],
+            params["opacities"], params["colors"],
+            viewmat.unsqueeze(0), K.unsqueeze(0), w, h,
+        )
+        rendered_views.append(img[0].permute(1, 2, 0).detach().cpu())
+        targets.append(torch.tensor(np.asarray(keyframes[name], dtype=np.float32)))
+
+    result = evaluate_quality(rendered_views, targets)
+    result["views_used"] = common
+    return result
+
 
 def log(msg, level="INFO"):
     timestamp = time.strftime("%H:%M:%S")
@@ -185,14 +303,25 @@ def evaluate_pipeline(video_path, work_dir="/tmp/splatcat_eval"):
     splat_count = parse_ply_point_count(output_ply)
     log(f"3D Gaussian Splats generated: {splat_count:,} Gaussians in {output_ply}")
 
-    # Evaluation Criteria
-    success = (reg_images >= 10) and (num_points3d >= 500) and (splat_count >= 5000)
+    # Stage 6: Quality evaluation against the acceptance bar (PRD 0003 T4)
+    quality = score_trained_model(output_ply, sparse_dir, frames_dir)
+    log(f"Rendered quality vs keyframes: PSNR {quality.get('psnr', 0.0):.2f} dB, "
+        f"SSIM {quality.get('ssim', 0.0):.3f} (bar: PSNR >= {ACCEPTANCE_BAR['psnr_min']}, "
+        f"SSIM >= {ACCEPTANCE_BAR['ssim_min']})")
+
+    # Evaluation Criteria: SfM sanity gates AND the measured acceptance bar.
+    sfm_ok = (reg_images >= 10) and (num_points3d >= 500) and (splat_count >= 5000)
+    success = sfm_ok and bool(quality.get("passed", False))
     eval_summary = {
         "video": video_path,
         "extracted_keyframes": len(extracted_frames),
         "registered_cameras": reg_images,
         "sparse_3d_points": num_points3d,
         "trained_3dgs_count": splat_count,
+        "quality_psnr": quality.get("psnr", 0.0),
+        "quality_ssim": quality.get("ssim", 0.0),
+        "quality_views_used": quality.get("views_used", []),
+        "acceptance_bar": ACCEPTANCE_BAR,
         "passed": success
     }
     

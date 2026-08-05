@@ -4,7 +4,7 @@ import tempfile
 import unittest
 import numpy as np
 import torch
-from train_3dgs_metal import write_3dgs_ply, train_3dgs_metal
+from train_3dgs_metal import write_3dgs_ply
 
 class TestSplatCatPipeline(unittest.TestCase):
 

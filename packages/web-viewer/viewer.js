@@ -194,6 +194,7 @@
     let headerEnd = false;
     const points = [];
     const colorsList = [];
+    const scalesList = [];
 
     const c0 = 0.28209479177387814;
 
@@ -215,12 +216,15 @@
           const sh1 = parseFloat(parts[7]);
           const sh2 = parseFloat(parts[8]);
 
-          // Parse per-splat log scales from PLY if present
-          let scaleVal = 0.05;
+          // Parse per-splat log scales from PLY: scale_0 at parts[10],
+          // stored as log-scale per the viewer contract (writer: log(scale)).
+          // Clamped to a sane render range so degenerate models cannot
+          // produce screen-filling squares.
+          let scaleVal = 0.045;
           if (parts.length >= 13) {
             const s0 = parseFloat(parts[10]);
             if (Number.isFinite(s0)) {
-              scaleVal = Math.min(0.2, Math.max(0.005, Math.exp(s0)));
+              scaleVal = Math.min(0.2, Math.max(0.001, Math.exp(s0)));
             }
           }
 
@@ -232,6 +236,7 @@
           if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
             points.push(x, y, z);
             colorsList.push(r, g, b);
+            scalesList.push(scaleVal);
           }
         }
       }
@@ -276,9 +281,9 @@
 
     const positions = new Float32Array(points);
     const colors = new Float32Array(colorsList);
-    const scales = new Float32Array(count);
-    // Parse per-splat scales preserved from PLY
-    for (let k = 0; k < count; k++) scales[k] = 0.045;
+    // Per-splat scales preserved from PLY, normalized with the same scaleFactor
+    const scales = new Float32Array(scalesList);
+    for (let k = 0; k < count; k++) scales[k] *= scaleFactor;
 
     createSplatMesh(positions, colors, scales, count);
     splatCountEl.textContent = count.toLocaleString();
@@ -354,7 +359,8 @@
 
         // Perspective-correct splat sizing
         float dist = length(mvPosition.xyz);
-        gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / dist));
+        gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / max(dist, 0.5)));
+        gl_PointSize = min(gl_PointSize, 64.0);
       }
     `;
 
@@ -457,6 +463,8 @@
 
     const newPositions = [];
     const newColors = [];
+    const newScales = [];
+    const scaleAttr = splatMesh.geometry.attributes.splatScale;
 
     for (let i = 0; i < positions.length; i += 3) {
       vec.set(positions[i], positions[i + 1], positions[i + 2]);
@@ -465,6 +473,7 @@
       if (vec.x >= minX && vec.x <= maxX && vec.y >= minY && vec.y <= maxY && vec.z >= minZ && vec.z <= maxZ) {
         newPositions.push(positions[i], positions[i + 1], positions[i + 2]);
         newColors.push(colors[i], colors[i + 1], colors[i + 2]);
+        newScales.push(scaleAttr ? scaleAttr.array[i / 3] : 0.045);
       }
     }
 
@@ -472,8 +481,7 @@
     if (newCount > 0) {
       const posArr = new Float32Array(newPositions);
       const colArr = new Float32Array(newColors);
-      const scaleArr = new Float32Array(newCount);
-      for (let k = 0; k < newCount; k++) scaleArr[k] = 0.045;
+      const scaleArr = new Float32Array(newScales);
 
       createSplatMesh(posArr, colArr, scaleArr, newCount);
       splatCountEl.textContent = newCount.toLocaleString();

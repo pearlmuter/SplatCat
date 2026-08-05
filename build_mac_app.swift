@@ -325,13 +325,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
                 logConsole("ERROR", "Keyframe pre-processing encountered a non-zero exit code: \(preCode). Continuing with extracted frames.")
             }
 
-            // Stage 1.7: Monocular Depth Map Generation for Smooth Plaster Walls
-            let depthScript = "\(projectDir)/estimate_depth_maps.py"
-            updateProgress(pct: 30, label: "Generating monocular depth maps for smooth plaster walls...")
-            let depthCode = runSubprocess(bin: venvPython, args: [depthScript, framesDir], description: "Monocular depth estimation")
-            if depthCode != 0 {
-                logConsole("ERROR", "Monocular depth map generation encountered a non-zero exit code: \(depthCode). Continuing.")
-            }
+            // Stage 1.7: Monocular depth — EXPLICITLY DROPPED (PRD 0003 T5 / ticket #24).
+            // The renderer has no depth output mode, so the depth prior is absent
+            // rather than the historical luminance/y-gradient placeholder.
+            logConsole("INFO", "Monocular depth stage skipped (explicitly dropped, PRD 0003 T5).")
 
             // Stage 2: COLMAP feature_extractor
             updateProgress(pct: 35, label: "Running COLMAP SIFT feature extraction...")
