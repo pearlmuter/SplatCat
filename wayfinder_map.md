@@ -42,21 +42,24 @@ How should SplatCat optimize Gaussian positions, colors, scales, rotations, and 
 ## textureless-surface-depth-priors: Monocular Depth Supervision for Walls & Glossy Surfaces
 
 Blocked by: None
-Status: open
+Status: resolved
 Type: Research
 
 ### Question
 How should SplatCat reconstruct textureless painted walls, floor planes, and reflective TV screens where SIFT feature extraction yields 0 points? Should we integrate Monocular Depth Networks (Depth Anything V2 / ZoeDepth), RANSAC planar boundary extrapolation, or PatchMatch MVS stereo depth maps?
 
 ### Answer
-*To be resolved in session.*
+**Decision**: Depth Anything V2 Monocular Depth Supervision.
+1. **Dense Depth Estimation**: Pre-processes keyframe images with Depth Anything V2 to generate a continuous relative depth map $\mathcal{D}(u,v)$ per pixel.
+2. **Depth Loss Regularization**: Incorporates depth supervision loss $\mathcal{L}_{\text{depth}} = \|\mathcal{D}_{\text{rendered}} - \mathcal{D}_{\text{predicted}}\|_1$ into the wgpu training loop, anchoring Gaussians onto smooth plaster walls, doors, and floor surfaces.
+3. **Outlier Elimination**: Prevents floating splat noise in empty room space.
 
 ---
 
 ## video-capture-and-frame-preprocessing: Video Capture Quality & Pre-Processing Workflows
 
 Blocked by: None
-Status: open
+Status: in-progress
 Type: Research
 
 ### Question
