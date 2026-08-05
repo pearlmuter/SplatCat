@@ -99,7 +99,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
         config.userContentController.add(self, name: "processVideo")
         config.userContentController.add(self, name: "openFilePicker")
         config.userContentController.add(self, name: "togglePauseProcess")
-        
+        config.userContentController.add(self, name: "exportHtmlNative")
+
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = self
@@ -181,6 +182,41 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
                     isProcessPaused = true
                     let js = "if (window.splatcatOnPauseStateChanged) window.splatcatOnPauseStateChanged(true);"
                     webView.evaluateJavaScript(js, completionHandler: nil)
+                }
+            }
+        } else if message.name == "exportHtmlNative",
+           let body = message.body as? [String: Any],
+           let htmlContent = body["content"] as? String {
+            let defaultName = (body["defaultName"] as? String) ?? "splatcat_web_export.html"
+            DispatchQueue.main.async { [weak self] in
+                let savePanel = NSSavePanel()
+                savePanel.title = "Export Standalone HTML 3D Viewer"
+                savePanel.nameFieldStringValue = defaultName
+                savePanel.canCreateDirectories = true
+                if #available(macOS 11.0, *) {
+                    savePanel.allowedContentTypes = [.html]
+                } else {
+                    savePanel.allowedFileTypes = ["html"]
+                }
+                let targetWindow = self?.window ?? NSApp.keyWindow
+                let handleSave: (NSApplication.ModalResponse) -> Void = { response in
+                    if response == .OK, let targetURL = savePanel.url {
+                        do {
+                            try htmlContent.write(to: targetURL, atomically: true, encoding: .utf8)
+                            print("🟢 [SplatCat Mac] Exported HTML package successfully to: \(targetURL.path)")
+                            let js = "if (window.splatcatOnExportComplete) window.splatcatOnExportComplete(true, '\(targetURL.path)');"
+                            self?.webView.evaluateJavaScript(js, completionHandler: nil)
+                        } catch {
+                            print("🔴 [SplatCat Mac] Failed to write HTML export: \(error)")
+                            let js = "if (window.splatcatOnExportComplete) window.splatcatOnExportComplete(false, '\(error.localizedDescription)');"
+                            self?.webView.evaluateJavaScript(js, completionHandler: nil)
+                        }
+                    }
+                }
+                if let win = targetWindow {
+                    savePanel.beginSheetModal(for: win, completionHandler: handleSave)
+                } else {
+                    savePanel.begin(completionHandler: handleSave)
                 }
             }
         }

@@ -248,6 +248,14 @@
   };
 
   function setupExporter() {
+    window.splatcatOnExportComplete = (success, pathOrError) => {
+      if (success) {
+        console.log('HTML package exported to:', pathOrError);
+      } else {
+        console.error('HTML export failed:', pathOrError);
+      }
+    };
+
     btnExportDesktop.addEventListener('click', () => {
       const htmlContent = `<!DOCTYPE html>
 <html>
@@ -287,13 +295,20 @@
 </body>
 </html>`;
 
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'splatcat_web_export.html';
-      a.click();
-      URL.revokeObjectURL(url);
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.exportHtmlNative) {
+        window.webkit.messageHandlers.exportHtmlNative.postMessage({
+          content: htmlContent,
+          defaultName: 'splatcat_web_export.html'
+        });
+      } else {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'splatcat_web_export.html';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     });
   }
 

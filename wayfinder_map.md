@@ -9,14 +9,20 @@
 ## native-nssavepanel: Native macOS NSSavePanel Dialog for HTML Export
 
 Blocked by: None
-Status: open
+Status: resolved
 Type: Task
 
 ### Question
 How to prompt the user with a native macOS file selection dialog (`NSSavePanel`) when exporting HTML packages, allowing them to choose the exact destination directory and filename instead of downloading silently to `~/Downloads`?
 
 ### Answer
-*To be resolved in session.*
+By bridging `WKWebView` script message handling with macOS AppKit `NSSavePanel`:
+1. Register script message handler `exportHtmlNative` with `config.userContentController.add(self, name: "exportHtmlNative")` in `build_mac_app.swift`.
+2. In `userContentController(_:didReceive:)`, intercept `exportHtmlNative` messages containing HTML string content and suggested default filename (`splatcat_web_export.html`).
+3. Instantiate `NSSavePanel`, configuring `title`, `nameFieldStringValue`, `canCreateDirectories = true`, and restricting `allowedContentTypes` to `.html`.
+4. Present `savePanel.beginSheetModal(for: window)` on main thread. Upon approval (`.OK`), write the payload to `savePanel.url` using UTF-8 encoding.
+5. Evaluate `window.splatcatOnExportComplete(success, pathOrError)` JS completion callback.
+6. In `apps/desktop/app.js`, feature-detect `window.webkit.messageHandlers.exportHtmlNative` on `#btn-export-desktop` click to dispatch the message, retaining standard `Blob` / `<a>` download fallback for plain Web browser sessions.
 
 ---
 
