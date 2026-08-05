@@ -1,70 +1,61 @@
-# Wayfinder Map: SplatCat 3DGS Quality & UI Roadmap
+# Wayfinder Map: SplatCat 3DGS Quality & Architecture Research Roadmap
 
 ## Notes
 - **Domain**: SplatCat 3D Gaussian Splatting Suite
-- **Skills**: `/wayfinder`, `/domain-modeling`
+- **Skills**: `/wayfinder`, `/domain-modeling`, `/grilling`
 
 ---
 
-## native-nssavepanel: Native macOS NSSavePanel Dialog for HTML Export
-
-Blocked by: None
-Status: resolved
-Type: Task
-
-### Question
-How to prompt the user with a native macOS file selection dialog (`NSSavePanel`) when exporting HTML packages, allowing them to choose the exact destination directory and filename instead of downloading silently to `~/Downloads`?
-
-### Answer
-By bridging `WKWebView` script message handling with macOS AppKit `NSSavePanel`:
-1. Register script message handler `exportHtmlNative` with `config.userContentController.add(self, name: "exportHtmlNative")` in `build_mac_app.swift`.
-2. In `userContentController(_:didReceive:)`, intercept `exportHtmlNative` messages containing HTML string content and suggested default filename (`splatcat_web_export.html`).
-3. Instantiate `NSSavePanel`, configuring `title`, `nameFieldStringValue`, `canCreateDirectories = true`, and restricting `allowedContentTypes` to `.html`.
-4. Present `savePanel.beginSheetModal(for: window)` on main thread. Upon approval (`.OK`), write the payload to `savePanel.url` using UTF-8 encoding.
-5. Evaluate `window.splatcatOnExportComplete(success, pathOrError)` JS completion callback.
-6. In `apps/desktop/app.js`, feature-detect `window.webkit.messageHandlers.exportHtmlNative` on `#btn-export-desktop` click to dispatch the message, retaining standard `Blob` / `<a>` download fallback for plain Web browser sessions.
-
----
-
-## webgl-elliptical-shader: Custom WebGL 2D Elliptical Gaussian Fragment Shader
-
-Blocked by: None
-Status: resolved
-Type: Prototype
-
-### Question
-How to replace Three.js `THREE.PointsMaterial` square point sprites with a custom WebGL fragment shader (`ShaderMaterial`) that calculates the 2D projected covariance matrix $\Sigma'$ and renders true smooth 2D elliptical Gaussians with exponential alpha falloff ($\exp(-r^2)$)?
-
-### Answer
-Replaced default `THREE.PointsMaterial` in `packages/web-viewer/viewer.js` with custom `THREE.ShaderMaterial`:
-1. **Vertex Shader**: Calculates distance-scaled perspective point size `gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / dist))` and passes `vColor` / `vOpacity` to fragment stage.
-2. **Fragment Shader**: Transforms normalized point coordinates `uv = gl_PointCoord * 2.0 - 1.0`, computes radial distance $r^2 = uv \cdot uv$, discards fragments outside unit circle ($r^2 > 1.0$), and renders smooth exponential 2D Gaussian opacity falloff $\alpha = v\text{Opacity} \cdot \exp(-4.0 \cdot r^2)$.
-3. Replaced square billboard sprites with smoothly blended Gaussian splats, eliminating point-cloud "confetti" artifacts.
-
----
-
-## camera-photometric-loss: PyTorch Metal Camera Pinhole Projection & Photometric Loss
+## web-viewport-rendering-architecture: WebGL vs WebGPU 3DGS Tile Rasterizer Architecture
 
 Blocked by: None
 Status: open
 Type: Research
 
 ### Question
-How to upgrade `train_3dgs_metal.py` to project 3D Gaussians onto COLMAP camera poses using pinhole camera parameters and compute $L_1 + L_{\text{SSIM}}$ image reconstruction loss against training keyframes on Metal GPU (MPS)?
+What is the optimal long-term rendering architecture for SplatCat's 3D viewport on web and desktop? How do custom WebGL ShaderMaterials compare to WebGPU tile rasterizers (`wgpu-splat` / `Brush` / PlayCanvas `SuperSplat` / `gsplat.js`) in terms of GPU sorting, alpha blending fidelity, and frame-rate performance for 500k+ to 2M+ Gaussians?
 
 ### Answer
 *To be resolved in session.*
 
 ---
 
-## monocular-depth-priors: Monocular Depth Map Supervision for Textureless Walls
+## metal-gpu-photometric-optimization: Differentiable Camera Projection & Image Loss Engine
 
-Blocked by: camera-photometric-loss
+Blocked by: None
 Status: open
 Type: Research
 
 ### Question
-How to integrate monocular depth estimation (Depth Anything V2 / ZoeDepth) to supervise Gaussian depth rendering and anchor splats onto textureless plaster walls and floor planes where SIFT extracted 0 points?
+How should SplatCat optimize Gaussian positions, colors, scales, rotations, and opacities via image-based photometric reconstruction loss ($L_1 + L_{\text{SSIM}}$) on Apple Silicon Metal GPUs? What are the architectural pros, cons, and performance limits of PyTorch MPS vs Brush Rust/wgpu vs gsplat Metal ports?
+
+### Answer
+*To be resolved in session.*
+
+---
+
+## textureless-surface-depth-priors: Monocular Depth Supervision for Walls & Glossy Surfaces
+
+Blocked by: metal-gpu-photometric-optimization
+Status: open
+Type: Research
+
+### Question
+How should SplatCat reconstruct textureless painted walls, floor planes, and reflective TV screens where SIFT feature extraction yields 0 points? Should we integrate Monocular Depth Networks (Depth Anything V2 / ZoeDepth), RANSAC planar boundary extrapolation, or PatchMatch MVS stereo depth maps?
+
+### Answer
+*To be resolved in session.*
+
+---
+
+## video-capture-and-frame-preprocessing: Video Capture Quality & Pre-Processing Workflows
+
+Blocked by: None
+Status: open
+Type: Research
+
+### Question
+What video capture protocols and automated pre-processing steps (exposure normalization, Laplacian motion blur filtering, AE/AF lock guidelines) will prevent photometric flickers and floaters during 3DGS training?
 
 ### Answer
 *To be resolved in session.*
