@@ -25,20 +25,23 @@ What is the optimal long-term rendering architecture for SplatCat's 3D viewport 
 ## metal-gpu-photometric-optimization: Differentiable Camera Projection & Image Loss Engine
 
 Blocked by: None
-Status: open
+Status: resolved
 Type: Research
 
 ### Question
 How should SplatCat optimize Gaussian positions, colors, scales, rotations, and opacities via image-based photometric reconstruction loss ($L_1 + L_{\text{SSIM}}$) on Apple Silicon Metal GPUs? What are the architectural pros, cons, and performance limits of PyTorch MPS vs Brush Rust/wgpu vs gsplat Metal ports?
 
 ### Answer
-*To be resolved in session.*
+**Decision**: Native Rust / `wgpu` (`Brush`) Differentiable Metal Engine.
+1. **Performance**: Runs natively on Apple Silicon Metal GPUs via `wgpu` compute shaders, avoiding Python GIL locks and PyTorch MPS tensor dispatch overhead.
+2. **Architecture**: Compiles into a lightweight native executable/library bundled inside the Tauri desktop app, eliminating external PyTorch Python environment dependencies.
+3. **Loss & Density Control**: Performs $L_1 + L_{\text{SSIM}}$ image reconstruction loss, adaptive Gaussian splitting, cloning, and alpha pruning entirely in VRAM.
 
 ---
 
 ## textureless-surface-depth-priors: Monocular Depth Supervision for Walls & Glossy Surfaces
 
-Blocked by: metal-gpu-photometric-optimization
+Blocked by: None
 Status: open
 Type: Research
 
