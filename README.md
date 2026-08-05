@@ -51,10 +51,10 @@ flowchart LR
 ```
 
 1. **Stage 1**: FFmpeg keyframe extraction (fps=10, capped at 1,000 max images).
-2. **Stage 1.5**: Adaptive relative sharpness culling & linear RGB exposure normalization ([`preprocess_keyframes.py`](file:///Users/emil/Documents/Codex/SplatCat/preprocess_keyframes.py)).
-3. **Stage 1.7**: Monocular relative depth map estimation ([`estimate_depth_maps.py`](file:///Users/emil/Documents/Codex/SplatCat/estimate_depth_maps.py)).
+2. **Stage 1.5**: Adaptive relative sharpness culling & linear RGB exposure normalization ([`preprocess_keyframes.py`](preprocess_keyframes.py)).
+3. **Stage 1.7**: Monocular relative depth map estimation ([`estimate_depth_maps.py`](estimate_depth_maps.py)).
 4. **Stages 2–4**: COLMAP SIFT feature extraction, sequential matching, and sparse Bundle Adjustment.
-5. **Stage 5**: Differentiable Metal GPU 3DGS optimization with $L_1 + L_{\text{SSIM}}$ photometric loss and monocular depth supervision ([`train_3dgs_metal.py`](file:///Users/emil/Documents/Codex/SplatCat/train_3dgs_metal.py)).
+5. **Stage 5**: Differentiable Metal GPU 3DGS optimization with $L_1 + L_{\text{SSIM}}$ photometric loss and monocular depth supervision ([`train_3dgs_metal.py`](train_3dgs_metal.py)).
 
 ---
 
@@ -68,7 +68,7 @@ SplatCat/
 ├── train_3dgs_metal.py       # PyTorch Metal GPU (MPS) Differentiable 3DGS Trainer
 ├── auto_evaluate_pipeline.py # End-to-End Pipeline Automated Evaluator
 ├── apps/
-│   ├── desktop/              # macOS WebKit App UI (Retro Windows 95 Theme)
+│   ├── desktop/              # macOS Desktop App UI (Tauri + WebKit)
 │   └── mobile/               # iOS Companion AR Scanner (Swift + ARKit + Metal)
 ├── packages/
 │   └── web-viewer/           # 60 FPS WebGPU / WebGL2 3D Viewport & Interactive Gizmos
@@ -130,12 +130,12 @@ The project includes an extensive test suite covering every core component:
 
 ## 📑 Architectural Decision Records (ADRs)
 
-- [ADR 0001: Room Corner Video Processing Architecture](docs/adr/0001-room-corner-video-processing-architecture.md)
-- [ADR 0002: Viewport Auto-Centering & k-NN Scaling](docs/adr/0002-viewport-auto-centering-knn-scaling.md)
-- [ADR 0003: Retro Windows 95 UI & Brand System](docs/adr/0003-retro-windows95-ui-and-brand-system.md)
-- [ADR 0004: Native macOS `NSSavePanel` HTML Export](docs/adr/0004-native-nssavepanel-html-export.md)
-- [ADR 0005: Differentiable Camera Pinhole Photometric Loss](docs/adr/0005-differentiable-camera-pinhole-photometric-loss.md)
-- [ADR 0006: Monocular Depth Supervision Loss](docs/adr/0006-monocular-depth-supervision-loss.md)
+- [ADR 0001: GLOMAP Structure-from-Motion Execution Strategy](docs/adr/0001-glomap-sfm-execution-strategy.md)
+- [ADR 0002: Brush 3DGS Differentiable Rasterization & Metal GPU Training Pipeline](docs/adr/0002-brush-3dgs-metal-training-pipeline.md)
+- [ADR 0003: SPZ Quantization & Compression Format Integration](docs/adr/0003-spz-quantization-compression.md)
+- [ADR 0004: Native macOS `NSSavePanel` Integration for HTML Export](docs/adr/0004-native-nssavepanel-html-export.md)
+- [ADR 0005: Differentiable Camera Pinhole Photometric Reconstruction Loss](docs/adr/0005-differentiable-camera-pinhole-photometric-loss.md)
+- [ADR 0006: Monocular Depth Supervision Loss for Textureless Surfaces](docs/adr/0006-monocular-depth-supervision-loss.md)
 
 ---
 
