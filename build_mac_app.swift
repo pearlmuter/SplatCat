@@ -323,6 +323,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
                 logConsole("ERROR", "Keyframe pre-processing encountered a non-zero exit code: \(preCode). Continuing with extracted frames.")
             }
 
+            // Stage 1.7: Monocular Depth Map Generation for Smooth Plaster Walls
+            let depthScript = "\(projectDir)/estimate_depth_maps.py"
+            updateProgress(pct: 30, label: "Generating monocular depth maps for smooth plaster walls...")
+            let depthCode = runSubprocess(bin: venvPython, args: [depthScript, framesDir], description: "Monocular depth estimation")
+            if depthCode != 0 {
+                logConsole("ERROR", "Monocular depth map generation encountered a non-zero exit code: \(depthCode). Continuing.")
+            }
+
             // Stage 2: COLMAP feature_extractor
             updateProgress(pct: 35, label: "Running COLMAP SIFT feature extraction...")
             let featCode = runSubprocess(bin: "/opt/homebrew/bin/colmap", args: ["feature_extractor", "--database_path", dbPath, "--image_path", framesDir, "--ImageReader.camera_model", "SIMPLE_RADIAL", "--ImageReader.single_camera", "1", "--SiftExtraction.max_num_features", "8192"], description: "COLMAP feature extraction")
