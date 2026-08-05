@@ -314,7 +314,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
             }
 
             // Stage 1.5: Adaptive Blur Filtering & Exposure Equalization Pre-Processing
-            let projectDir = "/Users/emil/Documents/Codex/SplatCat"
+            let projectDir = FileManager.default.currentDirectoryPath
             let venvPython = "\(projectDir)/.venv/bin/python"
             let preScript = "\(projectDir)/preprocess_keyframes.py"
             updateProgress(pct: 25, label: "Equalizing keyframe exposure & culling motion-blurred whip-pans...")
