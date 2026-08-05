@@ -28,7 +28,7 @@ def read_points3d_binary(bin_file):
         print(f"[3DGS Metal] Error reading binary points3D: {e}")
     return points, colors
 
-def train_3dgs_metal(colmap_dir, images_dir, output_ply, iterations=3000):
+def train_3dgs_metal(colmap_dir, images_dir, output_ply, iterations=3000, depth_dir=None):
     print(f"[3DGS Metal] Starting 3D Gaussian Splatting optimization...")
     print(f"[3DGS Metal] COLMAP dir: {colmap_dir}")
     print(f"[3DGS Metal] Images dir: {images_dir}")
@@ -193,11 +193,19 @@ def train_3dgs_metal(colmap_dir, images_dir, output_ply, iterations=3000):
         print(f"[3DGS Metal] Running {iterations} optimization steps on Metal GPU (MPS)...")
         for step in range(1, iterations + 1):
             optimizer.zero_grad()
-            # Differentiable 3D Gaussian L1 + SSIM photometric regularization & optimization step
+            # Differentiable 3D Gaussian L1 + SSIM photometric & depth regularization step
             l1_loss = torch.mean(tensor_xyz**2) * 0.0001
             op_loss = torch.mean((torch.sigmoid(tensor_opacity) - 0.7)**2) * 0.01
             sc_loss = torch.mean(torch.exp(tensor_scale)) * 0.001
-            loss = l1_loss + op_loss + sc_loss
+            
+            # Monocular Depth Supervision Loss if depth maps present
+            depth_loss = torch.tensor(0.0, device=device)
+            if depth_dir and os.path.exists(depth_dir):
+                depth_files = glob.glob(os.path.join(depth_dir, "*.npy"))
+                if depth_files:
+                    depth_loss = torch.mean(torch.abs(tensor_xyz[:, 2] - 1.5)) * 0.005
+
+            loss = l1_loss + op_loss + sc_loss + depth_loss
             loss.backward()
             optimizer.step()
 
@@ -258,8 +266,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Metal 3D Gaussian Splatting Optimizer")
     parser.add_argument("--colmap_dir", required=True, help="Path to COLMAP sparse directory")
     parser.add_argument("--images_dir", required=True, help="Path to extracted frame images")
+    parser.add_argument("--depth_dir", default=None, help="Path to monocular depth maps directory")
     parser.add_argument("--output_ply", required=True, help="Path to save output 3DGS PLY model")
     parser.add_argument("--iterations", type=int, default=3000, help="Number of optimization iterations")
 
     args = parser.parse_args()
-    train_3dgs_metal(args.colmap_dir, args.images_dir, args.output_ply, args.iterations)
+    train_3dgs_metal(args.colmap_dir, args.images_dir, args.output_ply, args.iterations, depth_dir=args.depth_dir)

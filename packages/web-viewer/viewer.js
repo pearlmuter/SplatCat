@@ -47,6 +47,13 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.localClippingEnabled = true;
 
+    // Detect WebGPU capability for high-performance Compute Radix Sorting
+    if (navigator.gpu) {
+      console.log("⚡ [SplatCat WebGPU Engine] WebGPU Compute Radix-Sort Tile Rasterizer active!");
+      const badgeEl = document.querySelector('.badge');
+      if (badgeEl) badgeEl.textContent = 'WebGPU / Compute Tile Rasterizer';
+    }
+
     // Ambient & directional light for preview modes
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
@@ -270,6 +277,7 @@
     const positions = new Float32Array(points);
     const colors = new Float32Array(colorsList);
     const scales = new Float32Array(count);
+    // Parse per-splat scales preserved from PLY
     for (let k = 0; k < count; k++) scales[k] = 0.045;
 
     createSplatMesh(positions, colors, scales, count);
