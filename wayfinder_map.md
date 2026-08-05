@@ -9,14 +9,16 @@
 ## web-viewport-rendering-architecture: WebGL vs WebGPU 3DGS Tile Rasterizer Architecture
 
 Blocked by: None
-Status: open
+Status: resolved
 Type: Research
 
 ### Question
 What is the optimal long-term rendering architecture for SplatCat's 3D viewport on web and desktop? How do custom WebGL ShaderMaterials compare to WebGPU tile rasterizers (`wgpu-splat` / `Brush` / PlayCanvas `SuperSplat` / `gsplat.js`) in terms of GPU sorting, alpha blending fidelity, and frame-rate performance for 500k+ to 2M+ Gaussians?
 
 ### Answer
-*To be resolved in session.*
+**Decision**: Dedicated WebGPU Compute Radix-Sort Architecture for Desktop Application.
+1. **Desktop App (Tauri / macOS Native Host)**: Leverages 100% native WebGPU compute pipelines with in-VRAM GPU Radix Sorting (`wgpu-splat` / `Brush`). Because the desktop host is guaranteed to run on Apple Silicon Metal GPUs with WebGPU support, no WebGL fallback engine is needed inside the desktop app codebase.
+2. **Web Exporter**: Web export packages target lightweight HTML5/WebGL single-file SPZ viewers for universal browser sharing.
 
 ---
 
