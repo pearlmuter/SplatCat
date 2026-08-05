@@ -322,16 +322,62 @@
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('splatScale', new THREE.BufferAttribute(scales, 1));
 
-    const material = new THREE.PointsMaterial({
-      size: parseFloat(scaleInput.value) * 0.045,
-      vertexColors: true,
+    const uniforms = {
+      uSplatScale: { value: parseFloat(scaleInput.value) * 1.5 },
+      uOpacity: { value: parseFloat(opacityInput.value) || 0.85 }
+    };
+
+    const vertexShader = `
+      attribute float splatScale;
+      varying vec3 vColor;
+      varying float vOpacity;
+
+      uniform float uSplatScale;
+      uniform float uOpacity;
+
+      void main() {
+        vColor = color;
+        vOpacity = uOpacity;
+
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+
+        // Perspective-correct splat sizing
+        float dist = length(mvPosition.xyz);
+        gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / dist));
+      }
+    `;
+
+    const fragmentShader = `
+      varying vec3 vColor;
+      varying float vOpacity;
+
+      void main() {
+        // Center gl_PointCoord to [-1.0, 1.0]
+        vec2 uv = gl_PointCoord * 2.0 - 1.0;
+        float r2 = dot(uv, uv);
+
+        // Discard pixels outside circular Gaussian support boundary
+        if (r2 > 1.0) discard;
+
+        // Exponential 2D Gaussian radial falloff: exp(-4.0 * r^2)
+        float gaussianAlpha = vOpacity * exp(-4.0 * r2);
+
+        gl_FragColor = vec4(vColor, gaussianAlpha);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
       transparent: true,
-      opacity: parseFloat(opacityInput.value) || 0.85,
+      depthTest: true,
+      depthWrite: false,
       blending: THREE.NormalBlending,
-      depthWrite: true,
-      clippingPlanes: clipPlanes,
-      clipShadows: true
+      clipping: true
     });
 
     splatMesh = new THREE.Points(geometry, material);
@@ -431,12 +477,16 @@
 
     scaleInput.addEventListener('input', (e) => {
       scaleValEl.textContent = e.target.value;
-      if (splatMesh) splatMesh.material.size = parseFloat(e.target.value) * 0.045;
+      if (splatMesh && splatMesh.material.uniforms) {
+        splatMesh.material.uniforms.uSplatScale.value = parseFloat(e.target.value) * 1.5;
+      }
     });
 
     opacityInput.addEventListener('input', (e) => {
       opacityValEl.textContent = e.target.value;
-      if (splatMesh) splatMesh.material.opacity = parseFloat(e.target.value);
+      if (splatMesh && splatMesh.material.uniforms) {
+        splatMesh.material.uniforms.uOpacity.value = parseFloat(e.target.value);
+      }
     });
 
     budgetInput.addEventListener('input', (e) => {

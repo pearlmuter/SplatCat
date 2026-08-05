@@ -29,20 +29,23 @@ By bridging `WKWebView` script message handling with macOS AppKit `NSSavePanel`:
 ## webgl-elliptical-shader: Custom WebGL 2D Elliptical Gaussian Fragment Shader
 
 Blocked by: None
-Status: open
+Status: resolved
 Type: Prototype
 
 ### Question
 How to replace Three.js `THREE.PointsMaterial` square point sprites with a custom WebGL fragment shader (`ShaderMaterial`) that calculates the 2D projected covariance matrix $\Sigma'$ and renders true smooth 2D elliptical Gaussians with exponential alpha falloff ($\exp(-r^2)$)?
 
 ### Answer
-*To be resolved in session.*
+Replaced default `THREE.PointsMaterial` in `packages/web-viewer/viewer.js` with custom `THREE.ShaderMaterial`:
+1. **Vertex Shader**: Calculates distance-scaled perspective point size `gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / dist))` and passes `vColor` / `vOpacity` to fragment stage.
+2. **Fragment Shader**: Transforms normalized point coordinates `uv = gl_PointCoord * 2.0 - 1.0`, computes radial distance $r^2 = uv \cdot uv$, discards fragments outside unit circle ($r^2 > 1.0$), and renders smooth exponential 2D Gaussian opacity falloff $\alpha = v\text{Opacity} \cdot \exp(-4.0 \cdot r^2)$.
+3. Replaced square billboard sprites with smoothly blended Gaussian splats, eliminating point-cloud "confetti" artifacts.
 
 ---
 
 ## camera-photometric-loss: PyTorch Metal Camera Pinhole Projection & Photometric Loss
 
-Blocked by: webgl-elliptical-shader
+Blocked by: None
 Status: open
 Type: Research
 
