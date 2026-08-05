@@ -28,8 +28,18 @@ def filter_relative_motion_blur(image_variances: list[float], relative_drop_thre
     """Compares adjacent frame Laplacian variance. Drops whip-pans without deleting sharp smooth wall photos."""
     if not image_variances:
         return []
-    keep_flags = [True] * len(image_variances)
-    for i in range(1, len(image_variances) - 1):
+    n = len(image_variances)
+    keep_flags = [True] * n
+    
+    if n > 1:
+        # Boundary frame i=0
+        if image_variances[1] > 0 and (image_variances[0] / image_variances[1]) < (1.0 - relative_drop_threshold):
+            keep_flags[0] = False
+        # Boundary frame i=n-1
+        if image_variances[-2] > 0 and (image_variances[-1] / image_variances[-2]) < (1.0 - relative_drop_threshold):
+            keep_flags[-1] = False
+
+    for i in range(1, n - 1):
         prev_var = image_variances[i - 1]
         curr_var = image_variances[i]
         next_var = image_variances[i + 1]

@@ -282,7 +282,7 @@
 
     createSplatMesh(positions, colors, scales, count);
     splatCountEl.textContent = count.toLocaleString();
-    formatEl.textContent = "SPZ (" + (filename || "Reconstructed") + ")";
+    formatEl.textContent = "PLY (" + (filename || "Reconstructed") + ")";
     isDemoMode = false;
   }
 
