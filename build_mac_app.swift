@@ -374,7 +374,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDe
             // Stage 5: PyTorch Metal GPU 3DGS Trainer
             updateProgress(pct: 90, label: "Optimizing 3D Gaussians on Apple Metal GPU (PyTorch MPS)...")
             let pyScript = "\(projectDir)/train_3dgs_metal.py"
-            _ = runSubprocess(bin: venvPython, args: [pyScript, "--colmap_dir", sparseDir, "--images_dir", framesDir, "--output_ply", outputPlyPath, "--iterations", "3000"], description: "PyTorch Metal 3DGS optimizer")
+            _ = runSubprocess(bin: venvPython, args: [pyScript, "--colmap_dir", sparseDir, "--images_dir", framesDir, "--output_ply", outputPlyPath, "--iterations", "3000", "--render_width", "640", "--render_height", "360"], description: "PyTorch Metal 3DGS optimizer")
 
             // Read output PLY and send to UI
             if fm.fileExists(atPath: outputPlyPath),

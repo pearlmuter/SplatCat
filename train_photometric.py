@@ -14,6 +14,7 @@ the viewer attribute contract (log-scales, SH DC colors, quaternion layout).
 
 import glob
 import os
+import time
 
 import numpy as np
 
@@ -208,8 +209,12 @@ def build_views_from_colmap(sparse_dir, frames_dir=None):
     return views
 
 
-def load_keyframes(frames_dir):
-    """Loads keyframe PNG/JPG from frames_dir into normalized float32 RGB {name: HWC}."""
+def load_keyframes(frames_dir, resize=None):
+    """Loads keyframe PNG/JPG from frames_dir into normalized float32 RGB {name: HWC}.
+
+    resize=(w, h) optionally downsamples during load so training runs with a
+    reduced render size never hold the full-res frames in memory.
+    """
     from PIL import Image
     keyframes = {}
     patterns = [os.path.join(frames_dir, "*.png"), os.path.join(frames_dir, "*.jpg"),
@@ -220,6 +225,8 @@ def load_keyframes(frames_dir):
     for path in sorted(set(files)):
         name = os.path.basename(path)
         img = Image.open(path).convert("RGB")
+        if resize is not None:
+            img = img.resize(resize, Image.BILINEAR)
         keyframes[name] = np.asarray(img, dtype=np.float32) / 255.0
     return keyframes
 
@@ -293,12 +300,18 @@ def train_photometric(
     width=None,
     height=None,
     depth_dir=None,
+    render_width=None,
+    render_height=None,
 ):
     """Runs real photometric 3DGS optimization against captured keyframes.
 
     depth_dir is accepted for CLI compatibility but IGNORED: the depth prior
     is explicitly dropped in this training cut (PRD 0003 T5 / ticket #24) —
     the renderer has no depth output mode, so no depth loss can be wired.
+
+    render_width/render_height optionally downscale rendering (and targets
+    and intrinsics) to speed up real runs; the exported PLY is unaffected —
+    Gaussian geometry is resolution-independent.
 
     Returns the recorded loss history (list of floats, one per logged step).
     """
@@ -319,16 +332,27 @@ def train_photometric(
     print(f"[Photometric] Device: {device}")
 
     views = build_views_from_colmap(colmap_dir, images_dir)
-    keyframes = load_keyframes(images_dir)
     if not views:
         raise FileNotFoundError("No usable camera views found in COLMAP sparse model")
-    if not keyframes:
-        raise FileNotFoundError(f"No keyframe images found in {images_dir}")
 
     if width is None:
         width = views[0]["width"]
     if height is None:
         height = views[0]["height"]
+
+    # Resolve the render resolution up front so keyframes are loaded at
+    # (possibly reduced) render size instead of holding full-res frames.
+    if render_width is None:
+        render_width = width
+    if render_height is None:
+        render_height = height
+    resize_load = None
+    if render_width != width or render_height != height:
+        resize_load = (render_width, render_height)
+
+    keyframes = load_keyframes(images_dir, resize=resize_load)
+    if not keyframes:
+        raise FileNotFoundError(f"No keyframe images found in {images_dir}")
 
     n_views = min(len(views), len(keyframes))
     if n_views == 0:
@@ -346,6 +370,15 @@ def train_photometric(
     if not matched:
         raise FileNotFoundError("No view matched a keyframe by name")
 
+    # Bound the training view set so all targets fit on device memory; evenly
+    # subsample any larger COLMAP model down to at most MAX_TRAIN_VIEWS views.
+    MAX_TRAIN_VIEWS = 200
+    if len(matched) > MAX_TRAIN_VIEWS:
+        stride = len(matched) / MAX_TRAIN_VIEWS
+        matched = [matched[int(i * stride)] for i in range(MAX_TRAIN_VIEWS)]
+        print(f"[Photometric] Subsampled to {MAX_TRAIN_VIEWS} evenly spaced training views")
+    n_views = len(matched)
+
     # Initial Gaussian configuration from COLMAP sparse points
     if init_points is None:
         sparse_xyz, sparse_rgb = _read_sparse_points(colmap_dir)
@@ -356,13 +389,54 @@ def train_photometric(
             init_points = [np.array([0.0, 0.0, 0.0])]
             init_colors = [np.array([0.5, 0.5, 0.5])]
 
+    # Bound the Gaussian count: tiny random subset of the sparse cloud keeps
+    # the pure-PyTorch rasterizer tractable on MPS. The optimizer adapts the
+    # surviving Gaussians to the surface.
+    MAX_INIT_POINTS = 50000
+    if len(init_points) > MAX_INIT_POINTS:
+        rng = np.random.default_rng(0)
+        keep = rng.choice(len(init_points), MAX_INIT_POINTS, replace=False)
+        init_points = [init_points[i] for i in keep]
+        init_colors = [init_colors[i] for i in keep]
+        print(f"[Photometric] Downsampled init cloud to {MAX_INIT_POINTS} Gaussians")
+
     means = torch.tensor(np.array(init_points, dtype=np.float32), requires_grad=True, device=device)
     colors = torch.tensor(np.array(init_colors, dtype=np.float32), requires_grad=True, device=device)
     N = means.shape[0]
     opacities = torch.full((N, 1), 0.7, dtype=torch.float32, requires_grad=True, device=device)
-    # Raw scales: constant init at 0.05 (log-space); k-NN spacing is not
-    # implemented in this cut. exp()-decoded at render time.
-    scales = torch.full((N, 3), np.log(0.05), dtype=torch.float32, requires_grad=True, device=device)
+
+    viewmats = torch.tensor(np.stack([v["viewmat"] for v, _ in matched]), device=device)
+    Ks = torch.tensor(np.stack([v["K"] for v, _ in matched]), device=device)
+    targets = torch.tensor(
+        np.stack([np.transpose(kf, (2, 0, 1)) for _, kf in matched]), device=device
+    )
+
+    # Adapt intrinsics to the render resolution; targets were loaded at it.
+    # The exported Gaussian geometry is resolution-independent.
+    if render_width != width or render_height != height:
+        sx = render_width / width
+        sy = render_height / height
+        scale = torch.tensor(
+            [[sx, 0.0, 0.0], [0.0, sy, 0.0], [0.0, 0.0, 1.0]],
+            dtype=Ks.dtype, device=device,
+        )
+        Ks = scale @ Ks
+        width, height = render_width, render_height
+        print(f"[Photometric] Render resolution: {width}x{height}")
+
+    # Init scales proportional to each splat's distance to the nearest camera
+    # so projected size is roughly constant in screen space (~1% of the focal
+    # length); a flat world-space init would blow near-field splats across
+    # every tile and make some views prohibitively expensive to render.
+    with torch.no_grad():
+        Rv = viewmats[:, :3, :3]
+        tv = viewmats[:, :3, 3]
+        cams = -torch.einsum("nij,ni->nj", Rv.transpose(1, 2), tv)  # (V, 3)
+        d2 = ((means.unsqueeze(1) - cams.unsqueeze(0)) ** 2).sum(-1)
+        near_depth = torch.sqrt(d2.min(dim=1).values)               # (N,)
+        init_scale = torch.clamp(0.01 * near_depth, 1e-4, 0.5)
+    scales = torch.log(init_scale).unsqueeze(1).expand(N, 3).contiguous()
+    scales = scales.clone().requires_grad_(True)
     quats = torch.zeros((N, 4), dtype=torch.float32, requires_grad=True, device=device)
     quats.data[:, 0] = 1.0
 
@@ -374,12 +448,6 @@ def train_photometric(
         {"params": [quats], "lr": 1e-3},
     ])
 
-    viewmats = torch.tensor(np.stack([v["viewmat"] for v, _ in matched]), device=device)
-    Ks = torch.tensor(np.stack([v["K"] for v, _ in matched]), device=device)
-    targets = torch.tensor(
-        np.stack([np.transpose(kf, (2, 0, 1)) for _, kf in matched]), device=device
-    )
-
     # A tiny subset of views per step for speed, shuffled each iteration.
     import random
     perm = list(range(n_views))
@@ -387,17 +455,21 @@ def train_photometric(
     loss_history = []
     log_every = max(1, iterations // 100)
     for step in range(1, iterations + 1):
+        t_step_start = time.time()
         random.shuffle(perm)
         sel = perm[: min(2, n_views)]
 
         optimizer.zero_grad()
+        t_render = time.time()
         img, alpha = render_gaussians(
             means, torch.clamp(quats, -1, 1), torch.exp(scales), torch.sigmoid(opacities),
             torch.clamp(colors, 0.0, 1.0),
             viewmats[sel], Ks[sel], width, height,
         )
+        t_render = time.time() - t_render
         target = targets[sel]
 
+        t_loss = time.time()
         l1 = torch.abs(img - target).mean()
         # Per-view SSIM against a per-view mean (single value per batch element)
         ssims = torch.stack([
@@ -415,10 +487,12 @@ def train_photometric(
         with torch.no_grad():
             means.data.clamp_(min=-5.0, max=5.0)
             scales.data.clamp_(min=np.log(1e-4), max=np.log(1.0))
+        t_step = time.time() - t_step_start
 
         if step % log_every == 0 or step == iterations:
             loss_history.append(float(loss.detach().cpu().numpy()))
-            print(f"[Photometric] Iteration {step}/{iterations} - Loss: {loss.item():.6f}")
+            print(f"[Photometric] Iteration {step}/{iterations} - Loss: {loss.item():.6f}"
+                  f" [render {t_render:.1f}s step {t_step:.1f}s]")
 
         if step % max(1, iterations // 4) == 0 or step == iterations:
             os.makedirs(os.path.dirname(os.path.abspath(output_ply)), exist_ok=True)
@@ -438,8 +512,11 @@ if __name__ == "__main__":
     parser.add_argument("--output_ply", required=True)
     parser.add_argument("--iterations", type=int, default=3000)
     parser.add_argument("--depth_dir", default=None)
+    parser.add_argument("--render_width", type=int, default=None)
+    parser.add_argument("--render_height", type=int, default=None)
     args = parser.parse_args()
     train_photometric(
         args.colmap_dir, args.images_dir, args.output_ply,
         iterations=args.iterations, depth_dir=args.depth_dir,
+        render_width=args.render_width, render_height=args.render_height,
     )

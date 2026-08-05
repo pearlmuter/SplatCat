@@ -322,7 +322,7 @@
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
 
-      scales[i] = 0.04 + Math.random() * 0.02;
+      scales[i] = 0.015 + Math.random() * 0.01;
     }
 
     createSplatMesh(positions, colors, scales, numPoints);
@@ -360,7 +360,9 @@
         // Perspective-correct splat sizing
         float dist = length(mvPosition.xyz);
         gl_PointSize = max(1.0, uSplatScale * splatScale * (400.0 / max(dist, 0.5)));
-        gl_PointSize = min(gl_PointSize, 64.0);
+        // Cap splat size so close-ups stay defined instead of saturating into
+        // squares that no longer track zoom.
+        gl_PointSize = min(gl_PointSize, 24.0);
       }
     `;
 

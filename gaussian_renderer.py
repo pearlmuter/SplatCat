@@ -52,21 +52,57 @@ def _quat_to_rot(quats):
     return rot.reshape(-1, 3, 3)
 
 
+_TILE = 64
+_CHUNK = 8192
+# Screen-space association cap (px): per-splat 3-sigma radius is clamped here
+# so overgrown Gaussians cannot make every tile evaluate the full splat list
+# (gsplat-style max-screen-size culling). Tails beyond the cap are dropped.
+_MAX_RADIUS_PX = 96.0
+
+
+def _tiles_for(width, height, device, dtype):
+    """Precomputes per-tile flat pixel indices and local pixel grids."""
+    tiles = []
+    for y0 in range(0, height, _TILE):
+        y1 = min(y0 + _TILE, height)
+        for x0 in range(0, width, _TILE):
+            x1 = min(x0 + _TILE, width)
+            ys = torch.arange(y0, y1, device=device)
+            xs = torch.arange(x0, x1, device=device)
+            idx = (ys.unsqueeze(1) * width + xs.unsqueeze(0)).reshape(-1)
+            grid = torch.stack(
+                [xs.repeat(y1 - y0), ys.repeat_interleave(x1 - x0)], dim=-1
+            ).to(dtype)
+            tiles.append((y0, y1, x0, x1, idx, grid))
+    return tiles
+
+
 def _render_gaussians_torch(means, quats, scales, opacities, colors,
                             viewmats, Ks, width, height, backgrounds=None):
-    """Pure-PyTorch differentiable forward pass for 3DGS."""
+    """Pure-PyTorch differentiable forward pass for 3DGS.
+
+    Memory-bounded tile rasterization: the image is split into _TILE x
+    _TILE blocks and each tile gathers only the splats whose projected
+    center falls within the tile bounds (padded by a 3-sigma screen
+    radius). Per-tile splat lists are composited in chunks of at most
+    _CHUNK splats, keeping peak per-step tensors at O(_CHUNK * _TILE^2)
+    instead of O(N * H * W), so real COLMAP-scale point clouds fit on MPS.
+    """
     device = means.device
     B = viewmats.shape[0]
     N = means.shape[0]
     dtype = torch.float32
 
-    out_images = []
-    out_alphas = []
+    tiles = _tiles_for(width, height, device, dtype)
+    pixel_count = width * height
 
     fx = Ks[:, 0, 0]
     fy = Ks[:, 1, 1]
     cx = Ks[:, 0, 2]
     cy = Ks[:, 1, 2]
+
+    out_images = []
+    out_alphas = []
 
     for b in range(B):
         R = viewmats[b, :3, :3]           # (3, 3)
@@ -74,7 +110,7 @@ def _render_gaussians_torch(means, quats, scales, opacities, colors,
         # Camera-space centers: p_cam = R @ means + t
         p_cam = means @ R.t() + t         # (N, 3)
         depth = p_cam[:, 2]               # (N,)
-        vis = depth > 0.01
+        vis = (depth > 0.01) & torch.isfinite(depth)
         depth_safe = torch.clamp(depth, min=0.01)
 
         u = fx[b] * p_cam[:, 0] / depth_safe + cx[b]
@@ -113,37 +149,85 @@ def _render_gaussians_torch(means, quats, scales, opacities, colors,
         inv[:, 0, 1] = -cov2[:, 0, 1] / det_safe
         inv[:, 1, 0] = -cov2[:, 1, 0] / det_safe
 
-        # Pixel grid
-        ys, xs = torch.meshgrid(
-            torch.arange(height, device=device, dtype=dtype),
-            torch.arange(width, device=device, dtype=dtype),
-            indexing="ij",
+        # Conservative per-splat screen radius (3 sigma from the 2D
+        # covariance trace) deciding which tiles a splat can contribute to,
+        # capped so degenerate large splats stay cheap to rasterize.
+        radius = 3.0 * torch.sqrt(
+            torch.clamp(cov2[:, 0, 0] + cov2[:, 1, 1], min=1e-8)
         )
-        grid = torch.stack([xs.reshape(-1), ys.reshape(-1)], dim=-1)  # (HW, 2)
+        radius = torch.clamp(radius, max=_MAX_RADIUS_PX)
 
         centers = torch.stack([u, v], dim=-1)  # (N, 2)
-        d = grid.unsqueeze(0) - centers.unsqueeze(1)  # (N, HW, 2)
-
-        maha = torch.einsum("npi,nij,npj->np", d, inv, d)  # (N, HW)
         opac = opacities.reshape(-1)
-        gauss_alpha = opac.unsqueeze(1) * torch.exp(-0.5 * maha)  # (N, HW)
-        gauss_alpha = torch.clamp(gauss_alpha, 0.0, 1.0)
-        # Kill contributions outside the visible depth range
-        gauss_alpha = gauss_alpha * vis.unsqueeze(1).to(dtype)
 
-        # Back-to-front compositing: sort far -> near
-        order = torch.argsort(depth, descending=True)
-        alpha_sorted = gauss_alpha[order]          # (N, HW)
-        color_sorted = colors[order].unsqueeze(1)  # (N, 1, 3)
+        # Global depth order (far -> near); masked per-tile gathers below
+        # preserve this order, so no per-tile sort is needed.
+        order = torch.argsort(depth, descending=True, stable=True)
+        su = u[order]
+        sv = v[order]
+        svis = vis[order]
+        sradius = radius[order]
+        sopac = opac[order]
+        scolors = colors[order]
+        sinv = inv[order]
 
-        # T_i = prod_{j<i} (1 - alpha_j); C = sum_i T_i * alpha_i * c_i
-        trans = torch.cumprod(1.0 - alpha_sorted, dim=0)
-        trans_shift = torch.cat([torch.ones_like(trans[:1]), trans[:-1]], dim=0)
+        acc_flat = torch.zeros(pixel_count, 3, device=device, dtype=dtype)
+        alpha_flat = torch.zeros(pixel_count, device=device, dtype=dtype)
 
-        acc = torch.einsum("np,npc,np->pc", trans_shift, color_sorted, alpha_sorted)  # (HW, 3)
-        img = acc.reshape(height, width, 3)
-        # True coverage: 1 - prod(1 - alpha_i) over all splats, per pixel.
-        a_accum = (1.0 - torch.prod(1.0 - alpha_sorted, dim=0)).reshape(height, width)
+        for y0, y1, x0, x1, tidx, grid_tile in tiles:
+            in_tile = (
+                (su >= x0 - sradius) & (su <= x1 + sradius)
+                & (sv >= y0 - sradius) & (sv <= y1 + sradius)
+                & svis & torch.isfinite(su) & torch.isfinite(sv)
+            )
+            sel = in_tile.nonzero(as_tuple=False).squeeze(-1)
+            if sel.shape[0] == 0:
+                continue
+
+            cent = torch.stack([su[sel], sv[sel]], dim=-1)   # (C, 2)
+            inv_t = sinv[sel]                                # (C, 2, 2)
+            opac_t = sopac[sel]                              # (C,)
+            col_t = scolors[sel]                             # (C, 3)
+
+            tile_acc = torch.zeros(grid_tile.shape[0], 3, device=device, dtype=dtype)
+            tile_trans = torch.ones(grid_tile.shape[0], device=device, dtype=dtype)
+            tile_transmission = torch.ones(grid_tile.shape[0], device=device, dtype=dtype)
+
+            for c0 in range(0, cent.shape[0], _CHUNK):
+                c1 = min(c0 + _CHUNK, cent.shape[0])
+                cc = cent[c0:c1]
+                ic = inv_t[c0:c1]
+                oc = opac_t[c0:c1]
+                coc = col_t[c0:c1]
+
+                d = grid_tile.unsqueeze(0) - cc.unsqueeze(1)  # (C, P, 2)
+                dx = d[..., 0]
+                dy = d[..., 1]
+                a = ic[:, 0, 0].unsqueeze(1)
+                bb = ic[:, 0, 1].unsqueeze(1)
+                e = ic[:, 1, 1].unsqueeze(1)
+                maha = a * dx * dx + 2.0 * bb * dx * dy + e * dy * dy  # (C, P)
+                gauss_alpha = oc.unsqueeze(1) * torch.exp(-0.5 * maha)
+                gauss_alpha = torch.clamp(gauss_alpha, 0.0, 1.0)        # (C, P)
+
+                # T_i = prod_{j<i} (1 - alpha_j); accumulate color with the
+                # transmission that reached this chunk.
+                trans_chunk = torch.cumprod(1.0 - gauss_alpha, dim=0)   # (C, P)
+                trans_shift = torch.cat(
+                    [torch.ones_like(trans_chunk[:1]), trans_chunk[:-1]], dim=0
+                )
+                contrib = (trans_shift * gauss_alpha).t() @ coc         # (P, 3)
+
+                tile_acc = tile_acc + tile_transmission.unsqueeze(1) * contrib
+                tile_transmission = tile_transmission * trans_chunk[-1]
+                # True coverage: 1 - prod(1 - alpha_i) over all splats.
+                tile_trans = tile_trans * torch.prod(1.0 - gauss_alpha, dim=0)
+
+            acc_flat = acc_flat.index_put((tidx,), tile_acc)
+            alpha_flat = alpha_flat.index_put((tidx,), 1.0 - tile_trans)
+
+        img = acc_flat.reshape(height, width, 3)
+        a_accum = alpha_flat.reshape(height, width)
 
         if backgrounds is not None:
             bg = backgrounds[b].permute(1, 2, 0)

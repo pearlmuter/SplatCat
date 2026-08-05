@@ -179,10 +179,13 @@ if __name__ == "__main__":
     parser.add_argument("--depth_dir", default=None, help="Path to monocular depth maps directory")
     parser.add_argument("--output_ply", required=True, help="Path to save output 3DGS PLY model")
     parser.add_argument("--iterations", type=int, default=3000, help="Number of optimization iterations")
+    parser.add_argument("--render_width", type=int, default=None, help="Optional render downscale width")
+    parser.add_argument("--render_height", type=int, default=None, help="Optional render downscale height")
 
     args = parser.parse_args()
     from train_photometric import train_photometric
     train_photometric(
         args.colmap_dir, args.images_dir, args.output_ply,
         iterations=args.iterations, depth_dir=args.depth_dir,
+        render_width=args.render_width, render_height=args.render_height,
     )
